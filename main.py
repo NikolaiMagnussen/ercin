@@ -2,7 +2,8 @@
 import requests
 import json
 import pprint
-import cristin_web_services
+import cws
+import cristin
 
 pp = pprint.PrettyPrinter()
 
@@ -21,7 +22,7 @@ def main():
 
 def query_collaborators():
     dag = 58877
-    ws = cristin_web_services.Cristin_WS()
+    ws = cws.Cristin_WS()
     results = ws.get_scientific_results(dag)
     collaborators = ws.get_scientific_collaborators(results)
     print(f"Got back {len(collaborators)} results for Dag!")
@@ -32,4 +33,6 @@ def query_collaborators():
 
 
 if __name__ == "__main__":
-    query_collaborators()
+    #query_collaborators()
+    cristin.rest.kake()
+    cristin.ws.kake()
