@@ -21,6 +21,9 @@ class Person():
         else:
             raise TypeError
 
+    def __str__(self):
+        return f"ID {self.cristin_person_id}: {self.surname},{self.firstname}"
+
     def get_results(self):
         return ws.get_results_by_person_id(self.cristin_person_id)
 
