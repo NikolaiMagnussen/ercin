@@ -1,4 +1,5 @@
 import requests
+import rest
 
 
 def get_results_by_person_id(person_id):
@@ -17,7 +18,7 @@ def get_results_by_person_id(person_id):
     if res.status_code != 200:
         return []
 
-    return [x['fellesdata'] for x in res.json()['forskningsresultat']]
+    return [Result(x['fellesdata']) for x in res.json()['forskningsresultat']]
 
 
 class Result():
@@ -26,8 +27,11 @@ class Result():
 
     Proper documentation comes later.
     """
-    def __init__(self, **kwargs):
-        self.__attributes = kwargs
+    def __init__(self, kwargs_dict):
+        self.__attributes = kwargs_dict
+
+    def __str__(self):
+        return f"{self.ar}: {self.tittel}"
 
     def get_collaborators(self):
         """
@@ -42,7 +46,10 @@ class Result():
                          will be present.
         """
         authors = self.person
-        return authors
+        if isinstance(authors, dict):
+            authors = [authors]
+
+        return [rest.Person(person['id']) for person in authors]
 
     def __get_property(self, prop_name):
         """
@@ -169,3 +176,20 @@ class Result():
                 String
         """
         return self.__get_property('erPublisert')
+
+
+if __name__ == "__main__":
+    start = 1
+    end = 50
+    for i in range(start, end):
+        results = get_results_by_person_id(i)
+        for i in results:
+            print(f"\n{i.tittel} is made by:")
+            if isinstance(i.person, dict):
+                person = rest.Person(i.person['id'])
+                print(f"\t{person.surname} has id {person.cristin_person_id}")
+            else:
+                for p in i.person:
+                    person = rest.Person(p['id'])
+                    print(f"\t{person.surname} has id"
+                          f"{person.cristin_person_id}")
