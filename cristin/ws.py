@@ -1,5 +1,5 @@
 import requests
-import rest
+from . import rest
 
 
 def get_results_by_person_id(person_id):
@@ -14,7 +14,7 @@ def get_results_by_person_id(person_id):
                      if no person was found, an empty list is returned.
     """
     res = requests.get(f"https://cristin.no/ws/hentVarbeiderPerson"
-                       f"?lopenr={person_id}&format=json")
+                       f"?lopenr={person_id}&format=json", headers={"Connection": "close"})
     if res.status_code != 200:
         return []
 
@@ -176,20 +176,3 @@ class Result():
                 String
         """
         return self.__get_property('erPublisert')
-
-
-if __name__ == "__main__":
-    start = 1
-    end = 50
-    for i in range(start, end):
-        results = get_results_by_person_id(i)
-        for i in results:
-            print(f"\n{i.tittel} is made by:")
-            if isinstance(i.person, dict):
-                person = rest.Person(i.person['id'])
-                print(f"\t{person.surname} has id {person.cristin_person_id}")
-            else:
-                for p in i.person:
-                    person = rest.Person(p['id'])
-                    print(f"\t{person.surname} has id"
-                          f"{person.cristin_person_id}")

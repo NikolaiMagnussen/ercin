@@ -1,5 +1,5 @@
 import requests
-import ws
+from . import ws
 
 
 class Person():
@@ -160,21 +160,3 @@ class Person():
             return self.__attributes['affiliations']
         except KeyError:
             return []
-
-
-if __name__ == '__main__':
-    start = 1
-    end = 100000
-    for i in range(start, end):
-        # TESTING
-        try:
-            p = Person(id=i)
-            if p.identified_cristin_person is False:
-                print("icp: " + p.identified_cristin_person)
-            if len(p.date_of_birth) != 0:
-                print("dob: " + p.date_of_birth)
-            if len(p.tel) != 0:
-                print("tel: " + p.tel)
-
-        except LookupError:
-            continue
