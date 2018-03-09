@@ -20,14 +20,12 @@ class Spider():
 
     def crawl(self, start_person):
         current_person = rest.Person(start_person)
-        current_results = current_person.get_results()
-        for res in current_results:
+        self.authors.add(current_person.cristin_person_id)
+        for res in current_person.get_results():
             if res.tittel not in self.results:
                 self.results.add(res.tittel)
-                list(map(lambda author: self.next_authors.add(author.cristin_person_id),
-                         res.get_collaborators()))
-        self.authors.add(current_person.cristin_person_id)
-        self.next_authors = self.next_authors.difference(self.authors)
+                list(map(lambda a: self.next_authors.add(a.cristin_person_id),
+                    filter(lambda a: a.cristin_person_id not in self.authors, res.get_collaborators())))
 
         # Print Information
         print(f"Crawled through the first person: {start_person}: Our Lord and Savior - Dag Johansen")
@@ -37,19 +35,18 @@ class Spider():
 
         while len(self.next_authors) > 0:
             current_person = rest.Person(self.next_authors.pop())
+            self.authors.add(current_person.cristin_person_id)
             for res in current_person.get_results():
                 if res.tittel not in self.results:
                     self.results.add(res.tittel)
-                    list(map(lambda author: self.next_authors.add(author.cristin_person_id),
-                             res.get_collaborators()))
-            self.authors.add(current_person.cristin_person_id)
-            self.next_authors = self.next_authors.difference(self.authors)
+                    list(map(lambda a: self.next_authors.add(a.cristin_person_id),
+                        filter(lambda a: a.cristin_person_id not in self.authors, res.get_collaborators())))
 
             # Print Information
             print(f"\nCrawled through {current_person.cristin_person_id}: {current_person.firstname} {current_person.surname}")
-            print(f"\tNum next authors: {len(self.next_authors)} crawl")
-            print(f"\tNum authors: {len(self.authors)}")
-            print(f"\tNum results: {len(self.results)}")
+            print(f"\tNum of authors to crawl: {len(self.next_authors)}")
+            print(f"\tNum authors crawled: {len(self.authors)}")
+            print(f"\tNum results crawled: {len(self.results)}")
         print(f"\nCrawl complete!")
 
 
