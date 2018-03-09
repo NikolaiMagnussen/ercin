@@ -31,12 +31,11 @@ class Spider():
 
         # Print Information
         print(f"Crawled through the first person: {start_person}: Our Lord and Savior - Dag Johansen")
-        print(f"\tNum next authors: {len(self.next_authors)}")
+        print(f"\tNum next authors: {len(self.next_authors)} to crawl")
         print(f"\tNum authors: {len(self.authors)}")
         print(f"\tNum results: {len(self.results)}")
 
-        while len(self.next_authors.difference(self.authors)) > 0:
-            print(f"Only {len(self.next_authors.difference(self.authors))} remaining authors to crawl")
+        while len(self.next_authors) > 0:
             current_person = rest.Person(self.next_authors.pop())
             for res in current_person.get_results():
                 if res.tittel not in self.results:
@@ -48,7 +47,7 @@ class Spider():
 
             # Print Information
             print(f"\nCrawled through {current_person.cristin_person_id}: {current_person.firstname} {current_person.surname}")
-            print(f"\tNum next authors: {len(self.next_authors)}")
+            print(f"\tNum next authors: {len(self.next_authors)} crawl")
             print(f"\tNum authors: {len(self.authors)}")
             print(f"\tNum results: {len(self.results)}")
         print(f"\nCrawl complete!")
