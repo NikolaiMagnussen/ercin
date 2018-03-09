@@ -9,15 +9,15 @@ class Person():
     """
     URL = "https://api.cristin.no/v2/persons"
 
-    def __init__(self, id=None, **kwargs):
-        if id is not None:
-            res = requests.get(f"{self.URL}/{id}")
+    def __init__(self, data):
+        if isinstance(data, int) or isinstance(data, str):
+            res = requests.get(f"{self.URL}/{data}")
             if res.status_code == 200:
                 self.__attributes = res.json()
             else:
                 raise LookupError
-        elif id is None and kwargs != {}:
-            self.__attributes = kwargs
+        elif isinstance(data, dict):
+            self.__attributes = data
         else:
             raise TypeError
 

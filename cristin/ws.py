@@ -65,7 +65,11 @@ class Result():
         if isinstance(authors, dict):
             authors = [authors]
 
-        return [rest.Person(person['id']) for person in authors]
+        def person_lite(p):
+            return {"cristin_person_id": p["id"],
+                    "firstname": p["fornavn"],
+                    "surname": p["etternavn"]}
+        return [rest.Person(person_lite(person)) for person in authors]
 
     @property
     def id(self):
