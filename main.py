@@ -27,7 +27,9 @@ class Spider():
                 list(map(lambda author: self.next_authors.add(author.cristin_person_id),
                          res.get_collaborators()))
         self.authors.add(current_person.cristin_person_id)
+        self.next_authors = self.next_authors.difference(self.authors)
 
+        # Print Information
         print(f"Crawled through the first person: {start_person}: Our Lord and Savior - Dag Johansen")
         print(f"\tNum next authors: {len(self.next_authors)}")
         print(f"\tNum authors: {len(self.authors)}")
@@ -42,11 +44,14 @@ class Spider():
                     list(map(lambda author: self.next_authors.add(author.cristin_person_id),
                              res.get_collaborators()))
             self.authors.add(current_person.cristin_person_id)
+            self.next_authors = self.next_authors.difference(self.authors)
+
+            # Print Information
             print(f"\nCrawled through {current_person.cristin_person_id}: {current_person.firstname} {current_person.surname}")
             print(f"\tNum next authors: {len(self.next_authors)}")
             print(f"\tNum authors: {len(self.authors)}")
             print(f"\tNum results: {len(self.results)}")
-        print("FERDIG!")
+        print(f"\nCrawl complete!")
 
 
 if __name__ == "__main__":
