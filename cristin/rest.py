@@ -27,6 +27,22 @@ class Person():
     def get_results(self):
         return ws.get_results_by_person_id(self.cristin_person_id)
 
+    def __get_property(self, prop_name):
+        """
+        Extract the value of a property from the Result data.
+
+        Parameters:
+            prop_name: str - denoting the name of the field to extract from.
+
+        Returns:
+            String with the value of the property, if it exist.
+            If it does not exist, an empty string will be returned.
+        """
+        try:
+            return self.__attributes[prop_name]
+        except KeyError:
+            return ''
+
     @property
     def cristin_person_id(self):
         """
@@ -36,7 +52,7 @@ class Person():
         Returns:
             type: string
         """
-        return self.__attributes['cristin_person_id']
+        return self.__get_property('cristin_person_id')
 
     @property
     def firstname(self):
@@ -47,10 +63,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['firstname']
-        except KeyError:
-            return ''
+        return self.__get_property('firstname')
 
     @property
     def surname(self):
@@ -61,10 +74,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['surname']
-        except KeyError:
-            return ''
+        return self.__get_property('surname')
 
     @property
     def private_email(self):
@@ -75,10 +85,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['private_email']
-        except KeyError:
-            return ''
+        return self.__get_property('private_email')
 
     @property
     def tel(self):
@@ -89,10 +96,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['tel']
-        except KeyError:
-            return ''
+        return self.__get_property('tel')
 
     @property
     def identified_cristin_person(self):
@@ -103,10 +107,7 @@ class Person():
         Returns:
             type: boolean
         """
-        try:
-            return self.__attributes['identified_cristin_person']
-        except KeyError:
-            return False
+        return self.__get_property('identified_cristin_person')
 
     @property
     def date_of_birth(self):
@@ -117,10 +118,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['date_of_birth']
-        except KeyError:
-            return ''
+        return self.__get_property('date_of_birth')
 
     @property
     def picture_url(self):
@@ -131,10 +129,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['picture_url']
-        except KeyError:
-            return ''
+        return self.__get_property('picture_url')
 
     @property
     def cristin_profile_url(self):
@@ -145,10 +140,7 @@ class Person():
         Returns:
             type: string
         """
-        try:
-            return self.__attributes['cristin_profile_url']
-        except KeyError:
-            return ''
+        return self.__get_property('cristin_profile_url')
 
     @property
     def affiliations(self):
@@ -159,7 +151,4 @@ class Person():
         Returns:
             type: list
         """
-        try:
-            return self.__attributes['affiliations']
-        except KeyError:
-            return []
+        return self.__get_property('affiliations')
