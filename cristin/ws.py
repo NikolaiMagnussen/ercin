@@ -33,6 +33,22 @@ class Result():
     def __str__(self):
         return f"{self.ar}: {self.tittel}"
 
+    def __get_property(self, prop_name):
+        """
+        Extract the value of a property from the Result data.
+
+        Parameters:
+            prop_name: str - denoting the name of the field to extract from.
+
+        Returns:
+            String with the value of the property, if it exist.
+            If it does not exist, an empty string will be returned.
+        """
+        try:
+            return self.__attributes[prop_name]
+        except KeyError:
+            return ''
+
     def get_collaborators(self):
         """
         Get a list of collaborators that worked on the Result.
@@ -50,22 +66,6 @@ class Result():
             authors = [authors]
 
         return [rest.Person(person['id']) for person in authors]
-
-    def __get_property(self, prop_name):
-        """
-        Extract the value of a property from the Result data.
-
-        Parameters:
-            prop_name: str - denoting the name of the field to extract from.
-
-        Returns:
-            String with the value of the property, if it exist.
-            If it does not exist, an empty string will be returned.
-        """
-        try:
-            return self.__attributes[prop_name]
-        except KeyError:
-            return ''
 
     @property
     def id(self):
