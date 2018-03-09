@@ -2,12 +2,14 @@ import unittest
 import warnings
 from cristin import ws, rest
 
+
 def ignore_warnings(test_func):
     def do_test(self, *args, **kwargs):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             test_func(self, *args, **kwargs)
     return do_test
+
 
 class TestCristinAPI(unittest.TestCase):
     @ignore_warnings
@@ -23,8 +25,7 @@ class TestCristinAPI(unittest.TestCase):
                 for p in i.person:
                     person = rest.Person(p['id'])
                     self.assertTrue(isinstance(person.surname, str))
-                    self.assertTrue(isinstance(person.cristin_person_id,
-                        str))
+                    self.assertTrue(isinstance(person.cristin_person_id, str))
 
     @ignore_warnings
     def test_ws_no_person(self):

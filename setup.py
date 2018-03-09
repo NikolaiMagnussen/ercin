@@ -3,10 +3,12 @@ from setuptools import setup
 from setuptools import find_packages
 import unittest
 
+
 def some_function():
     test_loader = unittest.TestLoader()
     test_suite = test_loader.discover("tests")
     return test_suite
+
 
 setup(
     name="cristin",

@@ -14,7 +14,7 @@ def get_results_by_person_id(person_id):
                      if no person was found, an empty list is returned.
     """
     res = requests.get(f"https://cristin.no/ws/hentVarbeiderPerson"
-                       f"?lopenr={person_id}&format=json", headers={"Connection": "close"})
+                       f"?lopenr={person_id}&format=json")
     if res.status_code != 200:
         return []
 

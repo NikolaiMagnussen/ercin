@@ -25,10 +25,12 @@ class Spider():
             if res.tittel not in self.results:
                 self.results.add(res.tittel)
                 list(map(lambda a: self.next_authors.add(a.cristin_person_id),
-                    filter(lambda a: a.cristin_person_id not in self.authors, res.get_collaborators())))
+                     filter(lambda a: a.cristin_person_id not in self.authors,
+                            res.get_collaborators())))
 
         # Print Information
-        print(f"Crawled through the first person: {start_person}: Our Lord and Savior - Dag Johansen")
+        print(f"Crawled through the first person: {start_person}:"
+              f"Our Lord and Savior - {current_person.firstname}")
         print(f"\tNum next authors: {len(self.next_authors)} to crawl")
         print(f"\tNum authors: {len(self.authors)}")
         print(f"\tNum results: {len(self.results)}")
@@ -39,11 +41,15 @@ class Spider():
             for res in current_person.get_results():
                 if res.tittel not in self.results:
                     self.results.add(res.tittel)
-                    list(map(lambda a: self.next_authors.add(a.cristin_person_id),
-                        filter(lambda a: a.cristin_person_id not in self.authors, res.get_collaborators())))
+                    list(map(lambda a:
+                             self.next_authors.add(a.cristin_person_id),
+                             filter(lambda a:
+                                    a.cristin_person_id not in self.authors,
+                                    res.get_collaborators())))
 
             # Print Information
-            print(f"\nCrawled through {current_person.cristin_person_id}: {current_person.firstname} {current_person.surname}")
+            print(f"\nCrawled through {current_person.cristin_person_id}:"
+                  f"{current_person.firstname} {current_person.surname}")
             print(f"\tNum of authors to crawl: {len(self.next_authors)}")
             print(f"\tNum authors crawled: {len(self.authors)}")
             print(f"\tNum results crawled: {len(self.results)}")
