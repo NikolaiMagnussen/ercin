@@ -12,6 +12,9 @@
 - Use Web Services module for extracting scientific publications authored by a person.
 - Use REST API module for extracting information about a person and which institution they belong to.
 
+## Problems Encountered:
+- Each Web Service API call seem to be rate-limited to 1MB/s.
+
 ## Authors:
 - Andreas Isnes Nilsen
 - Nikolai Åsen Magnussen
