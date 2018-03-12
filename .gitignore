@@ -2,3 +2,4 @@ cristin.egg-info/*
 __pycache__
 *.swp
 *.pyc
+*.log
