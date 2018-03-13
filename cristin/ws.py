@@ -26,14 +26,13 @@ def get_results_by_person_id(person_id, session=None):
                            background_callback=extract_results)
     else:
         resp = requests.get(f"https://cristin.no/ws/hentVarbeiderPerson"
-                           f"?lopenr={person_id}&format=json")
+                            f"?lopenr={person_id}&format=json")
 
         if resp.status_code != 200:
             return []
 
         json_data = resp.json()['forskningsresultat']
         return [Result(x['fellesdata']) for x in json_data]
-
 
 
 class Result():
