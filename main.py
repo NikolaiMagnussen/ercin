@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from cristin import rest
 from requests_futures.sessions import FuturesSession
+import time
 
 
 def query_collaborators():
@@ -22,11 +23,11 @@ class Spider():
         self.session = FuturesSession(max_workers=10)
 
     def print_stats(self, current_person):
-        print(f"\nCrawled through {current_person.cristin_person_id}:"
+        print(f"Crawled through {current_person.cristin_person_id}:"
               f"{current_person.firstname} {current_person.surname}")
         print(f"\tNum of authors to crawl: {len(self.next_authors)}")
         print(f"\tNum authors crawled: {len(self.authors)}")
-        print(f"\tNum results crawled: {len(self.results)}")
+        print(f"\tNum results crawled: {len(self.results)}\n")
 
     def process_results(self, results):
         for res in results:
@@ -69,12 +70,13 @@ class Spider():
                             res.get_collaborators())))
 
         # Print Information
-        self.current_person(current_person)
+        self.print_stats(current_person)
 
         # This must be done async!
         while len(self.next_authors) > 0:
             # Spin off a number of requests to get results
             async_reqs = []
+            start_time = time.perf_counter()
             for _ in range(self.batch_size):
                 # Get next person and add to set of crawled authors
                 current_person = rest.Person(self.next_authors.pop())
@@ -83,6 +85,9 @@ class Spider():
                 # Fire off the request
                 async_reqs.append(current_person.get_results(self.session))
 
+            print(f"Spinning of requests took {time.perf_counter()-start_time:.2f}s")
+            start_time = time.perf_counter()
+
             # Handle each request as soon as it finish
             while len(async_reqs) > 0:
                 for req in async_reqs:
@@ -90,6 +95,8 @@ class Spider():
                     if req.done():
                         self.process_results(req.result().data)
                         async_reqs.remove(req)
+                        print(f"Request {self.batch_size-len(async_reqs)}/{self.batch_size} "
+                                f"took {time.perf_counter()-start_time:.2f}s")
 
             # Print Information
             self.print_stats(current_person)
@@ -99,5 +106,5 @@ class Spider():
 if __name__ == "__main__":
     dag_id = 58877
     # query_collaborators()
-    spider = Spider(batch_size=100)
+    spider = Spider(batch_size=10)
     spider.crawl_async(dag_id)
