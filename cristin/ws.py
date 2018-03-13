@@ -2,7 +2,7 @@ import requests
 from . import rest
 
 
-def get_results_by_person_id(person_id):
+def get_results_by_person_id(person_id, session=None):
     """
     Query Cristin Web Service API for scientific results by a person.
 
@@ -13,12 +13,27 @@ def get_results_by_person_id(person_id):
         List[Result] associated with the person queried for, and
                      if no person was found, an empty list is returned.
     """
-    res = requests.get(f"https://cristin.no/ws/hentVarbeiderPerson"
-                       f"?lopenr={person_id}&format=json")
-    if res.status_code != 200:
-        return []
+    if session is not None:
+        def extract_results(sess, resp):
+            if resp.status_code == 200:
+                json_data = resp.json()['forskningsresultat']
+                resp.data = [Result(x['fellesdata']) for x in json_data]
+            else:
+                resp.data = []
 
-    return [Result(x['fellesdata']) for x in res.json()['forskningsresultat']]
+        return session.get(f"https://cristin.no/ws/hentVarbeiderPerson"
+                           f"?lopenr={person_id}&format=json",
+                           background_callback=extract_results)
+    else:
+        resp = requests.get(f"https://cristin.no/ws/hentVarbeiderPerson"
+                           f"?lopenr={person_id}&format=json")
+
+        if resp.status_code != 200:
+            return []
+
+        json_data = resp.json()['forskningsresultat']
+        return [Result(x['fellesdata']) for x in json_data]
+
 
 
 class Result():
