@@ -2,6 +2,86 @@ import requests
 from . import ws
 
 
+class Resource():
+    def __init__(self, URL, data):
+        if isinstance(data, dict):
+            self.__attributes = data
+
+        res = requests.get(f"{URL}/{data}")
+        if res.status_code == 200:
+            self.__attributes = res.json()
+        else:
+            raise LookupError
+
+    def get_property(self, prop_name):
+        """
+        Extract the value of a property from the Result data.
+
+        Parameters:
+            prop_name: str - denoting the name of the field to extract from.
+
+        Returns:
+            String with the value of the property, if it exist.
+            If it does not exist, an empty string will be returned.
+        """
+        try:
+            return self.__attributes[prop_name]
+        except KeyError:
+            return ''
+
+    @property
+    def attributes(self):
+        return self.__attributes
+
+
+class Unit(Resource):
+    """
+
+    doc comes lates
+    """
+    URL='https://api.cristin.no/v2/units'
+
+    def __init__(self, data):
+        Resource.__init__(self, self.URL, data)
+
+class Institution(Resource):
+    """
+
+    doc comes lates
+    """
+    URL='https://api.cristin.no/v2/institutions'
+
+    def __init__(self, data):
+        Resource.__init__(self, self.URL, data)
+
+    def __str__(self):
+        return f"ID {self.cristin_institution_id}: {self.institution_name}"
+
+    @property
+    def cristin_institution_id(self):
+        return self.get_property('cristin_institution_id')
+
+    @property
+    def acronym(self):
+        return self.get_property('acronym')
+
+    @property
+    def institution_name(self):
+        return self.get_property('institution_name')
+
+    @property
+    def country(self):
+        return self.get_property('country')
+
+    @property
+    def cristin_user_institution(self):
+        return self.get_property('cristin_user_institution')
+
+    @property
+    def corresponding_unit(self):
+        return self.get_property('corresponding_unit')
+
+
 class Person():
     """ Class desgined after cristins person JSON schema.
 
@@ -42,6 +122,9 @@ class Person():
             return self.__attributes[prop_name]
         except KeyError:
             return ''
+    @property
+    def attributes(self):
+        return self.__attributes
 
     @property
     def cristin_person_id(self):
