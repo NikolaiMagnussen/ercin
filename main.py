@@ -67,6 +67,8 @@ class Spider():
         # Print Information
         self.print_stats(current_person)
 
+        very_start = time.perf_counter()
+
         # This must be done async!
         last = None
         while len(self.next_authors) > 0:
@@ -85,11 +87,15 @@ class Spider():
 
             # Print Information
             if curr != last:
-                print(f"At least one result crawled in "
-                      f"{time.perf_counter()-start_time:.2f}s")
+                time_til_now = time.perf_counter()
+                print(f"After running for {time_til_now-very_start} seconds:")
+                print(f"\tAt least one result crawled in "
+                      f"\t{time_til_now-start_time:.2f}s")
+                print(f"\t{len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
+                      f"\t{len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
                 self.print_stats(curr)
             last = curr
-        print(f"\nCrawl complete!")
+        print(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f}")
 
     def crawl_async_batch(self, start_person):
         # Can do this synchronously
@@ -135,6 +141,8 @@ class Spider():
 
 if __name__ == "__main__":
     dag_id = 58877
+    pedersen_id = 50
     # query_collaborators()
     spider = Spider(batch_size=20)
-    spider.crawl_async_slots(dag_id)
+    spider.crawl_async_slots(pedersen_id)
+    # spider.crawl_async_batch(dag_id)
