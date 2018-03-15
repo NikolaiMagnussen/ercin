@@ -21,11 +21,11 @@ def get_results_by_person_id(person_id, session=None):
             else:
                 resp.data = []
 
-        return session.get(f"https://cristin.no/ws/hentVarbeiderPerson"
+        return session.get(f"https://api.cristin.no/ws/hentVarbeiderPerson"
                            f"?lopenr={person_id}&format=json",
                            background_callback=extract_results)
     else:
-        resp = requests.get(f"https://cristin.no/ws/hentVarbeiderPerson"
+        resp = requests.get(f"https://api.cristin.no/ws/hentVarbeiderPerson"
                             f"?lopenr={person_id}&format=json")
 
         if resp.status_code != 200:
