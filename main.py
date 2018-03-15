@@ -144,5 +144,5 @@ if __name__ == "__main__":
     pedersen_id = 50
     # query_collaborators()
     spider = Spider(batch_size=20)
-    spider.crawl_async_slots(pedersen_id)
+    spider.crawl_async_slots(dag_id)
     # spider.crawl_async_batch(dag_id)
