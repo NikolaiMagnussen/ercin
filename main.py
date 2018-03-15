@@ -1,30 +1,24 @@
-from py2neo import Node, Relationship, Graph
+#!/usr/bin/env python
+from multiprocessing import Process, Queue
+from db import DB
 from cristin import rest
-import requests
-
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-
+import time
 
 dag_id = 58877
 
+def start_db(queue):
+    db = DB(queue)
+    db.run()
 
+def start_spider(queue):
+    pass
 
-class Test:
-    URI = "localhost"
-    def __init__(self):
-        self.__db = Graph(self.URI, password='kakedeig')
+if __name__ == '__main__':
+    queue = Queue()
+    for pid in range(1):
+        db = Process(target=start_db, args=(queue,), daemon=True, name=f"pid:{pid}")
+        db.start()
 
-    def add_person(self, person):
-        for a in person.affiliations:
-            print(a['institution'])
+    queue.put(rest.Person(dag_id))
 
-
-    def add_institution(self, institution):
-        pass
-
-    def add_unit(self, unit):
-        pass
-
-t = Test()
-t.add_person(rest.Person(dag_id))
+    x = input("press Enter to exit\n")
