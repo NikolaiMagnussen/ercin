@@ -8,8 +8,8 @@ class Resource():
             if res.status_code == 200:
                 self.__attributes = res.json()
             else:
-                print(f"Requesting {self.URL}/{data} returned {res.status_code}: {res.reason}")
-                raise LookupError
+                raise LookupError(f"Requesting {self.URL}/{data} returned {res.status_code}: {res.reason}")
+
         elif isinstance(data, dict):
             self.__attributes = data
         else:

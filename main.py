@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 from multiprocessing import Process, Queue
-from db import DB
+from db import CRUD_neo4j
 from cristin import rest
 import time
 
 dag_id = 58877
 
 def start_db(queue):
-    db = DB(queue)
+    db = CRUD_neo4j(queue)
     db.run()
 
 def start_spider(queue):
