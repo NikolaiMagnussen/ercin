@@ -86,6 +86,10 @@ class Result():
         return [rest.Person(person_lite(person)) for person in authors]
 
     @property
+    def attributes(self):
+        return self.__attributes
+
+    @property
     def id(self):
         """
         Note:

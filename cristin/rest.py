@@ -1,19 +1,35 @@
 import requests
+from jsonschema import validate
 from . import ws
 
+import pprint
+
+
+pprint = pprint.PrettyPrinter(indent=4).pprint
+schemas = {}
+
 class Resource():
-    def __init__(self, URL, data):
+    def __init__(self, data):
+        if not 'person' in schemas:
+            res = requests.get(self.schema)
+            if res.status_code != 200:
+                raise LookupError("{res.status_code}: {res.reason} couldn't fetch schema")
+
+            schemas[self.__class__.__name__] = res.json()
+
         if isinstance(data, int) or isinstance(data, str):
             res = requests.get(f"{self.URL}/{data}")
             if res.status_code == 200:
                 self.__attributes = res.json()
             else:
-                raise LookupError(f"Requesting {self.URL}/{data} returned {res.status_code}: {res.reason}")
+                raise LookupError(f"{res.status_code}: {res.reason} {self.URL}/{data}")
 
         elif isinstance(data, dict):
             self.__attributes = data
         else:
             raise TypeError
+        pprint(self.attributes)
+        validate(self.attributes, schemas[self.__class__.__name__])
 
     def get_property(self, prop_name):
         """
@@ -53,12 +69,12 @@ class Resource():
         return len(self.__attributes)
 
 
-
 class Unit(Resource):
     """
 
     doc comes lates
     """
+
     URL = 'https://api.cristin.no/v2/units'
 
     def __init__(self, data):
@@ -66,7 +82,7 @@ class Unit(Resource):
 
     def __str__(self):
         name = list(self.unit_name.values())[0]
-        return f"ID {self.cristin_unit_id}: {name}"
+        return f"{self.cristin_unit_id:15} : {name}"
 
     @property
     def cristin_unit_id(self):
@@ -121,7 +137,7 @@ class Institution(Resource):
 
     def __str__(self):
         name = list(self.institution_name.values())[0]
-        return f"ID {self.cristin_institution_id}: {name}"
+        return f"{self.cristin_institution_id:15} : {name}"
 
     @property
     def cristin_institution_id(self):
@@ -177,13 +193,15 @@ class Person(Resource):
 
     doc comes later
     """
+
+    schema = 'http://api.cristin.no/v2/doc/json-schemas/persons_GET_response.json'
     URL = "https://api.cristin.no/v2/persons"
 
     def __init__(self, data):
-        Resource.__init__(self, self.URL, data)
+        Resource.__init__(self, data)
 
     def __str__(self):
-        return f"ID {self.cristin_person_id}: {self.surname},{self.firstname}"
+        return f"{self.cristin_person_id:15} : {self.surname}, {self.firstname}"
 
     def get_results(self, session=None):
         return ws.get_results_by_person_id(self.cristin_person_id, session)
