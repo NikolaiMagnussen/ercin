@@ -26,24 +26,22 @@ class CRUD_neo4j:
         for a in authors:
             if not self.person_exist(cristin_person_id=a.cristin_person_id):
                 self.person_create(rest.Person(a.cristin_person_id))
-            authors_nodes.append(self.person_read(cristin_person_id=a.cristin_person_id)[0])
+            authors_nodes.append(self.person_read(cristin_person_id=a.cristin_person_id))
 
         result_node = compile_node('Result', result)
         tx = self.__db.begin()
         tx.create(result_node)
         tx.commit()
-        self.__verbose(f"[CREATE][RESULT]:{result}")
 
-        for a in authors:
-            print(a)
-        self.__db.begin()
-        tx.create(Relationship(a, 'author', result_node))
-        tx.commit()
+        for a in authors_nodes:
+            tx = self.__db.begin()
+            tx.create(Relationship(a, 'author', result_node))
+            tx.commit()
 
     def result_read(self, **kwarg):
         selector = NodeSelector(self.__db)
-        selected = selector.select("Result", **kwarg)
-        return list(selected)
+        selected = selector.select("Result", **kwarg).first()
+        return selected
 
     def result_update(self):
         pass
@@ -52,7 +50,7 @@ class CRUD_neo4j:
         pass
 
     def result_exist(self, **kwarg):
-        return True if len(self.result_read(**kwarg)) else False
+        return True if self.result_read(**kwarg) else False
 
 
     def person_create(self, person):
@@ -91,7 +89,10 @@ class CRUD_neo4j:
             try:
                 transaction(self.unit_read(cristin_unit_id=unit_id)[0])
             except IndexError:
-                transaction(self.institution_read(cristin_unit_id=unit_id)[0])
+                try:
+                    transaction(self.institution_read(cristin_unit_id=unit_id)[0])
+                except IndexError:
+                    pass
 
         tx = self.__db.begin()
         tx.create(person_node)
@@ -102,7 +103,7 @@ class CRUD_neo4j:
     def person_read(self, **kwarg):
         selector = NodeSelector(self.__db)
         selected = selector.select("Person", **kwarg)
-        return list(selected)
+        return selected.first()
 
     def person_update(self):
         pass
@@ -111,7 +112,7 @@ class CRUD_neo4j:
         pass
 
     def person_exist(self, **kwarg):
-        return True if len(self.person_read(**kwarg)) else False
+        return True if self.person_read(**kwarg) else False
 
 
     def institution_create(self, institution):
