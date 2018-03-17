@@ -197,7 +197,8 @@ class CRUD_neo4j:
         while True:
             pkg = self.__queue.get()
             if isinstance(pkg, list):
-                self.result_create(pkg[0])
+                for result in pkg:
+                    self.result_create(result)
 
 def compile_node(label, properties):
     prop = filter(lambda x: not isinstance(x[1], list) and not isinstance(x[1], dict), properties)
