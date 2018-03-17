@@ -47,6 +47,23 @@ class Result():
     def __str__(self):
         return f"{self.ar}: {self.tittel}"
 
+    def __getitem__(self, prop_name):
+        return self.get_property(prop_name)
+
+    def __iter__(self):
+        self.__start = 0
+        return self
+
+    def __next__(self):
+        self.__start += 1
+        if self.__start > len(self):
+            raise StopIteration
+
+        return list(self.attributes.items())[self.__start - 1]
+
+    def __len__(self):
+        return len(self.__attributes)
+
     def __get_property(self, prop_name):
         """
         Extract the value of a property from the Result data.

@@ -3,9 +3,8 @@ from cristin import rest, ws
 import json
 
 import pprint
-pp = pprint.PrettyPrinter(indent=4)
+pprint = pprint.PrettyPrinter(indent=4).pprint
 
-dag_id="58877"
 
 class CRUD_neo4j:
     def __init__(self, queue, verbose=True):
@@ -16,21 +15,35 @@ class CRUD_neo4j:
             conf = json.load(c)
             self.__db = Graph(**conf['database'])
 
-    def result_create(self, result, recursive=True):
-        authors = result.get_collaborators()
-        pp.pprint(result.tittel)
-        for a in authors:
-            # Because of light persons
-            self.person_create(rest.Person(a.cristin_person_id))
+    def result_create(self, result):
+        if self.result_exist(id=result.id):
+            self.__verbose(f"[EXIST][RESULT]:{result}")
+            return
 
-        #pp.pprint(result.eier)
-        #pp.pprint(result.id)
-        #pp.pprint(result.kategori)
-        #pp.pprint(result.person)
+
+        authors = result.get_collaborators()
+        authors_nodes = []
+        for a in authors:
+            if not self.person_exist(cristin_person_id=a.cristin_person_id):
+                self.person_create(rest.Person(a.cristin_person_id))
+            authors_nodes.append(self.person_read(cristin_person_id=a.cristin_person_id)[0])
+
+        result_node = compile_node('Result', result)
+        tx = self.__db.begin()
+        tx.create(result_node)
+        tx.commit()
+        self.__verbose(f"[CREATE][RESULT]:{result}")
+
+        for a in authors:
+            print(a)
+        self.__db.begin()
+        tx.create(Relationship(a, 'author', result_node))
+        tx.commit()
 
     def result_read(self, **kwarg):
-        # Do something!
-        r = result_compile_node()
+        selector = NodeSelector(self.__db)
+        selected = selector.select("Result", **kwarg)
+        return list(selected)
 
     def result_update(self):
         pass
@@ -42,50 +55,53 @@ class CRUD_neo4j:
         return True if len(self.result_read(**kwarg)) else False
 
 
-    def person_create(self, person, recursive=True):
+    def person_create(self, person):
         # Check if person exist
         if self.person_exist(cristin_person_id=person.cristin_person_id):
-            self.__verbose(f"[EXIST]: {person}")
+            self.__verbose(f"[EXIST][PERSON]:{person}")
             return
 
         # Create person node
-        person_node = person_compile_node(person)
+        person_node = compile_node("Person", person)
 
         # Iterate through affiliations
-        for a in reversed(person.affiliations):
-            institution_id = a['institution']['cristin_institution_id']
-            unit_id = a['unit']['cristin_unit_id']
+        for affiliation in person.affiliations:
+            inst_id = affiliation['cristin_institution_id']
+            unit_id = affiliation['cristin_unit_id']
 
-            relation_prop  = {'active': get_prop(a, 'active'), 'email': get_prop(a, 'email')}
-            relation = get_prop(a, 'position')
-
-            relation = 'unkown' if relation == '' else list(relation.values())[0]
-
-            if recursive and not self.institution_exist(cristin_institution_id=institution_id):
-                self.institution_create(rest.Institution(institution_id))
+            if not self.institution_exist(cristin_institution_id=inst_id):
+                self.institution_create(rest.Institution(inst_id))
 
             def transaction(node):
+                tx = self.__db.begin()
+                relation = 'unkown'
                 try:
-                    print(node)
-                    node = node[0]
-                    tx = self.__db.begin()
-                    tx.create(Relationship(person_node, relation, node, **relation_prop))
-                    tx.commit()
-                except IndexError:
-                    raise IndexError(f"couldn't find associated institution for {person} : {unit_id} : {institution_id}")
+                    relation = affiliation['position']
+                except KeyError:
+                    pass
+
+                tx.create(Relationship(person_node, relation, node))
+                tx.commit()
 
             # Fetch institution record and unit record
-            transaction(self.institution_read(cristin_institution_id=institution_id))
-            transaction(self.unit_read(cristin_unit_id=unit_id))
+            try:
+                transaction(self.institution_read(cristin_institution_id=inst_id)[0])
+            except IndexError:
+                raise IndexError(f"cristin_institution_id: {inst_id} don't exist")
+            try:
+                transaction(self.unit_read(cristin_unit_id=unit_id)[0])
+            except IndexError:
+                transaction(self.institution_read(cristin_unit_id=unit_id)[0])
 
-
+        tx = self.__db.begin()
+        tx.create(person_node)
+        tx.commit()
             # Create relationships
-        self.__verbose(f"[CREATED] {person}")
+        self.__verbose(f"[CREATE][PERSON]:{person}")
 
     def person_read(self, **kwarg):
-        p = person_compile_node(rest.Person(kwarg))
         selector = NodeSelector(self.__db)
-        selected = selector.select("Person", **dict(p))
+        selected = selector.select("Person", **kwarg)
         return list(selected)
 
     def person_update(self):
@@ -98,36 +114,32 @@ class CRUD_neo4j:
         return True if len(self.person_read(**kwarg)) else False
 
 
-    def institution_create(self, institution, recursive=True):
+    def institution_create(self, institution):
         # Check if institution exist
-        if self.institution_exist(**institution.attributes):
-            self.__verbose(f"[EXIST ] {institution}")
+        if self.institution_exist(cristin_institution_id=institution.cristin_institution_id):
+            self.__verbose(f"[EXIST][INSTITUTION]:{institution}")
             return
 
         # Creating a institution node
-        institution_node = institution_compile_node(institution)
-        pp.pprint(institution_node)
-
-        if not recursive:
-            tx = self.__db.begin()
-            tx.create(institution_node)
-            tx.commit()
-            return
+        institution_node = compile_node("Institution", institution)
 
         # Fetching a unit object with institution_id, because we need the institution subunits
-        unit = rest.Unit(institution['corresponding_unit']['cristin_unit_id'])
-        self.__verbose(f"[CREATE] {unit}")
+        tx = self.__db.begin()
+        tx.create(institution_node)
+        tx.commit()
+        self.__verbose(f"[CREATE][INSTITUTION]:{institution}")
+
+        unit = rest.Unit(institution['cristin_unit_id'])
 
         for subunit in unit.subunits:
             s = rest.Unit(subunit['cristin_unit_id'])
             if not self.unit_exist(cristin_unit_id=s.cristin_unit_id):
-                self.__verbose(f"[CREATE] {s}")
+                self.__verbose(f"[CREATE][UNIT]:{s}")
                 self.unit_create(institution_node, rest.Unit(s.cristin_unit_id))
 
     def institution_read(self, **kwarg):
-        i = institution_compile_node(rest.Institution(kwarg))
         selector = NodeSelector(self.__db)
-        selected = selector.select("Institution", **dict(i))
+        selected = selector.select("Institution", **kwarg)
         return list(selected)
 
     def institution_update(self):
@@ -140,34 +152,30 @@ class CRUD_neo4j:
         return True if len(self.institution_read(**kwarg)) else False
 
 
-    def unit_create(self, parent, unit, recursive=True):
+    def unit_create(self, parent, unit):
         # Check if institution exist
-        if self.unit_exist(**unit.attributes):
-            self.__verbose(f"[EXIST ] {unit}")
+        if self.unit_exist(cristin_unit_id=unit.cristin_unit_id):
+            self.__verbose(f"[EXIST][UNIT]:{unit}")
             return
 
         # Creating a institution node
-        unit_node = unit_compile_node(unit)
+        unit_node = compile_node("Unit", unit)
 
         # Create relationship from subunit -> parent
         tx = self.__db.begin()
         tx.create(Relationship(unit_node, 'BELONGS_TO', parent))
         tx.commit()
 
-        if not recursive:
-            return
-
         # Traversing through n subunits
         for subunit in unit.subunits:
-            s = rest.Unit(subunit)
+            s = rest.Unit(subunit['cristin_unit_id'])
             if not self.unit_exist(cristin_unit_id=s.cristin_unit_id):
-                self.__verbose(f"[CREATE] {s}")
+                self.__verbose(f"[CREATE][UNIT]:{s}")
                 self.unit_create(unit_node, rest.Unit(s.cristin_unit_id))
 
     def unit_read(self, **kwarg):
-        u = unit_compile_node(rest.Unit(kwarg))
         selector = NodeSelector(self.__db)
-        selected = selector.select("Unit", **dict(u))
+        selected = selector.select("Unit", **kwarg)
         return list(selected)
 
     def unit_update(self):
@@ -180,7 +188,6 @@ class CRUD_neo4j:
         return True if len(self.unit_read(**kwarg)) else False
 
 
-
     def drop_db(self):
         self.__db.delete_all()
 
@@ -188,51 +195,9 @@ class CRUD_neo4j:
         self.drop_db()
         while True:
             pkg = self.__queue.get()
-            if isinstance(pkg, rest.Person):
-                self.person_create(pkg)
-            elif isinstance(pkg, ws.Result):
-                self.result_create(pkg)
+            if isinstance(pkg, list):
+                self.result_create(pkg[0])
 
-
-def person_compile_node(person):
-    if isinstance(person, rest.Person):
-        p = filter(lambda x : not isinstance(x[1], list), person)
-        return Node('Person', **{x[0] : x[1] for x in list(p)})
-
-    elif isinstance(person, Node):
-        return person
-
-    else:
-        raise TypeError("Argument is not of type cristin.rest.Person")
-
-def unit_compile_node(unit):
-    if isinstance(unit, rest.Unit):
-        u = map(lambda x: (x[0], list(x[1].values())[0]) if isinstance(x[1], dict) else x, unit)
-        u = filter(lambda x : not isinstance(x[1], list), list(u))
-        return Node('Unit', **{x[0] : x[1] for x in list(u)})
-
-    elif isinstance(unit, Node):
-        return unit
-
-    else:
-        raise TypeError("Argument is not of type cristin.rest.Unit")
-
-def institution_compile_node(institution):
-    if isinstance(institution, rest.Institution):
-        i = map(lambda x: (x[0], list(x[1].values())[0]) if isinstance(x[1], dict) else x, institution)
-        return Node('Institution', **{x[0] : x[1] for x in list(i)})
-
-    elif isinstance(institution, Node):
-        return institution
-
-    else:
-        raise TypeError("Argument is not of type cristin.rest.Institution")
-
-def result_compile_node(result):
-    pass
-
-def get_prop(key, val):
-    try:
-        return key[val]
-    except KeyError:
-        return ''
+def compile_node(label, properties):
+    prop = filter(lambda x: not isinstance(x[1], list) and not isinstance(x[1], dict), properties)
+    return Node(label, **{x[0]:x[1] for x in list(prop)})

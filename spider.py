@@ -14,7 +14,8 @@ def query_collaborators():
 
 
 class Spider():
-    def __init__(self, batch_size=10):
+    def __init__(self, queue, batch_size=10):
+        self.__queue = queue
         self.results = set()
         self.authors = set()
         self.next_authors = set()
@@ -23,6 +24,7 @@ class Spider():
         self.session = FuturesSession(max_workers=10)
 
     def print_stats(self, current_person):
+        return
         print(f"Crawled through {current_person.cristin_person_id}:"
               f"{current_person.firstname} {current_person.surname}")
         print(f"\tNum of authors to crawl: {len(self.next_authors)}")
@@ -51,6 +53,7 @@ class Spider():
             current_person = rest.Person(self.next_authors.pop())
             self.authors.add(current_person.cristin_person_id)
             results = current_person.get_results()
+            self.__queue.put(results)
             self.process_results(results)
 
             # Print Information

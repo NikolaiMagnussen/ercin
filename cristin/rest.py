@@ -1,35 +1,47 @@
 import requests
 from jsonschema import validate
 from . import ws
-
 import pprint
-
-
 pprint = pprint.PrettyPrinter(indent=4).pprint
+
+
+DEFAULT_LANG='en'
 schemas = {}
 
-class Resource():
-    def __init__(self, data):
-        if not 'person' in schemas:
-            res = requests.get(self.schema)
-            if res.status_code != 200:
-                raise LookupError("{res.status_code}: {res.reason} couldn't fetch schema")
 
-            schemas[self.__class__.__name__] = res.json()
+
+def del_lang_tag(blob, prop, lang):
+    try:
+        blob[prop] = blob[prop][lang]
+    except KeyError:
+        try:
+            blob[prop] = list(blob[prop].values())[0]
+        except KeyError:
+            pass
+
+class APIResource():
+    def __init__(self, data, lang):
+        name = self.__class__.__name__
+        if not name in schemas:
+            res = requests.get(f"{self.schema}?lang={lang}")
+            if res.status_code != 200:
+                raise LookupError("[{res.status_code}:{res.reason}] couldn't fetch {name} json schema")
+
+            schemas[name] = res.json()
 
         if isinstance(data, int) or isinstance(data, str):
-            res = requests.get(f"{self.URL}/{data}")
+            res = requests.get(f"{self.URL}/{data}?lang={lang}")
             if res.status_code == 200:
                 self.__attributes = res.json()
             else:
-                raise LookupError(f"{res.status_code}: {res.reason} {self.URL}/{data}")
+                raise LookupError(f"[{res.status_code}:{res.reason}] {self.URL}/{data}")
 
         elif isinstance(data, dict):
             self.__attributes = data
         else:
             raise TypeError
-        pprint(self.attributes)
-        validate(self.attributes, schemas[self.__class__.__name__])
+
+        #validate(self.attributes, schemas[name])
 
     def get_property(self, prop_name):
         """
@@ -69,20 +81,44 @@ class Resource():
         return len(self.__attributes)
 
 
-class Unit(Resource):
+class Unit(APIResource):
     """
 
     doc comes lates
     """
-
     URL = 'https://api.cristin.no/v2/units'
+    schema = 'http://api.cristin.no/v2/doc/json-schemas/units_GET_response.json'
 
-    def __init__(self, data):
-        Resource.__init__(self, self.URL, data)
+    def __init__(self, data, lang=DEFAULT_LANG):
+        APIResource.__init__(self, data, lang)
+
+        if isinstance(self.institution, str):
+            pprint(self.attributes)
+        self.attributes['cristin_institution_id'] = list(self.institution.values())[0]
+
+        del_lang_tag(self.attributes, 'unit_name', lang)
+
+        try:
+            del_lang_tag(self.attributes.parent_unit, 'unit_name', lang)
+        except AttributeError:
+            pass
+
+        try:
+            for unit in self.subunits:
+                del_lang_tag(unit, 'unit_name', lang)
+        except KeyError:
+            pass
 
     def __str__(self):
-        name = list(self.unit_name.values())[0]
-        return f"{self.cristin_unit_id:15} : {name}"
+        return f"{self.cristin_unit_id:15} : {self.unit_name}"
+
+    @property
+    def cristin_institution_id(self):
+        """
+        Returns:
+            type: string
+        """
+        return self.get_property('cristin_institution_id')
 
     @property
     def cristin_unit_id(self):
@@ -124,20 +160,33 @@ class Unit(Resource):
         """
         return self.get_property('subunits')
 
-
-class Institution(Resource):
+class Institution(APIResource):
     """
 
     doc comes lates
     """
     URL = 'https://api.cristin.no/v2/institutions'
+    schema = 'http://api.cristin.no/v2/doc/json-schemas/institutions_GET_response.json'
 
-    def __init__(self, data):
-        Resource.__init__(self, self.URL, data)
+    def __init__(self, data, lang=DEFAULT_LANG):
+        APIResource.__init__(self, data, lang)
+        del_lang_tag(self.attributes, 'institution_name', lang)
+
+        try:
+            self.attributes['cristin_unit_id'] = self.attributes['corresponding_unit']['cristin_unit_id']
+        except KeyError:
+            self.attributes['cristin_unit_id'] = self.attributes['corresponding_unit'].values()[0]
 
     def __str__(self):
-        name = list(self.institution_name.values())[0]
-        return f"{self.cristin_institution_id:15} : {name}"
+        return f"{self.cristin_unit_id:15}:{self.institution_name}"
+
+    @property
+    def cristin_unit_id(self):
+        """
+        Returns:
+            type: string
+        """
+        return self.get_property('cristin_unit_id')
 
     @property
     def cristin_institution_id(self):
@@ -145,6 +194,7 @@ class Institution(Resource):
         Returns:
             type: string
         """
+
         return self.get_property('cristin_institution_id')
 
     @property
@@ -179,16 +229,7 @@ class Institution(Resource):
         """
         return self.get_property('cristin_user_institution')
 
-    @property
-    def corresponding_unit(self):
-        """
-        Returns:
-            type: dict
-        """
-        return self.get_property('corresponding_unit')
-
-
-class Person(Resource):
+class Person(APIResource):
     """ Class desgined after cristins person JSON schema.
 
     doc comes later
@@ -197,11 +238,16 @@ class Person(Resource):
     schema = 'http://api.cristin.no/v2/doc/json-schemas/persons_GET_response.json'
     URL = "https://api.cristin.no/v2/persons"
 
-    def __init__(self, data):
-        Resource.__init__(self, data)
+    def __init__(self, data, lang=DEFAULT_LANG):
+        APIResource.__init__(self, data, lang)
+
+        for a in self.affiliations:
+            del_lang_tag(a, 'position', lang)
+            a['cristin_unit_id'] = a['unit']['cristin_unit_id']
+            a['cristin_institution_id'] = a['institution']['cristin_institution_id']
 
     def __str__(self):
-        return f"{self.cristin_person_id:15} : {self.surname}, {self.firstname}"
+        return f"{self.cristin_person_id} : {self.surname}, {self.firstname}"
 
     def get_results(self, session=None):
         return ws.get_results_by_person_id(self.cristin_person_id, session)
