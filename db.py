@@ -1,4 +1,6 @@
 from py2neo import Node, Relationship, Graph, NodeSelector, watch
+from py2neo.database.status import DatabaseError
+
 from cristin import rest, ws
 from threading import Thread
 from prwlock import RWLock
@@ -33,6 +35,7 @@ class CristinDB():
             select = NodeSelector(self.__db).select(label)
             return set(map(lambda x: x[prop], select))
 
+        self.drop_db()
         self.results = select("Result", "id")
         self.persons = select("Person", "cristin_person_id")
         self.instits = select("Institution", "cristin_institution_id")
@@ -45,11 +48,7 @@ class CristinDB():
             t = Thread(target=self.run, name=name, args=(name,), daemon=True)
             self.threads[name] = t.start()
 
-        self.batching()
-
-    def batching(self):
-        while True:
-            time.sleep(5)
+        self.run(self.__class__.__name__)
 
     def result_create(self, result):
         # Check if Result exist
@@ -99,6 +98,11 @@ class CristinDB():
             p_lock.release()
             return self.person_get(cristin_id)
 
+        tx = self.__db.begin()
+        tx.create(person_node)
+        tx.commit()
+        self.persons.add(cristin_id)
+
         # Affiliation
         for affiliation in person.affiliations:
             institution_id = affiliation["cristin_institution_id"]
@@ -119,13 +123,7 @@ class CristinDB():
 
             tx.create(Relationship(person_node, relation, institution_node))
             tx.commit()
-
-        tx = self.__db.begin()
-        tx.create(person_node)
-        tx.commit()
-        self.persons.add(cristin_id)
         p_lock.release()
-        print(person)
 
         return person_node
 
@@ -183,7 +181,13 @@ class CristinDB():
 
         # Save node
         tx = self.__db.begin()
-        tx.create(Relationship(unit_node, "belong", parent_node))
+        try:
+            tx.create(Relationship(unit_node, "belong", parent_node))
+        except DatabaseError:
+            print(unit)
+            print(parent_node)
+            raise DatabaseError
+
         tx.commit()
         self.units.add(cristin_id)
 
