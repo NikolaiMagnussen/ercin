@@ -1,13 +1,10 @@
-import requests
-from jsonschema import validate
 from . import ws
+
+import requests
 import pprint
-pprint = pprint.PrettyPrinter(indent=4).pprint
 
-
-DEFAULT_LANG='en'
+DEFAULT_LANG = 'en'
 schemas = {}
-
 
 
 def del_lang_tag(blob, prop, lang):
@@ -19,13 +16,14 @@ def del_lang_tag(blob, prop, lang):
         except KeyError:
             pass
 
+
 class APIResource():
     def __init__(self, data, lang):
         name = self.__class__.__name__
-        if not name in schemas:
+        if name not in schemas:
             res = requests.get(f"{self.schema}?lang={lang}")
             if res.status_code != 200:
-                raise LookupError("[{res.status_code}:{res.reason}] couldn't fetch {name} json schema")
+                raise LookupError("[{res.status_code}:{res.reason}]")
 
             schemas[name] = res.json()
 
@@ -34,14 +32,12 @@ class APIResource():
             if res.status_code == 200:
                 self.__attributes = res.json()
             else:
-                raise LookupError(f"[{res.status_code}:{res.reason}] {self.URL}/{data}")
+                raise LookupError(f"[{res.status_code}:{res.reason}]")
 
         elif isinstance(data, dict):
             self.__attributes = data
         else:
             raise TypeError
-
-        #validate(self.attributes, schemas[name])
 
     def get_property(self, prop_name):
         """
@@ -160,6 +156,7 @@ class Unit(APIResource):
         """
         return self.get_property('subunits')
 
+
 class Institution(APIResource):
     """
 
@@ -228,6 +225,7 @@ class Institution(APIResource):
             type: boolean
         """
         return self.get_property('cristin_user_institution')
+
 
 class Person(APIResource):
     """ Class desgined after cristins person JSON schema.

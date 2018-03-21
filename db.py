@@ -1,205 +1,215 @@
-from py2neo import Node, Relationship, Graph, NodeSelector
+from py2neo import Node, Relationship, Graph, NodeSelector, watch
 from cristin import rest, ws
-import json
+from threading import Thread
+from prwlock import RWLock
 
+import json
+import time
 import pprint
+
+r_lock = RWLock()
+p_lock = RWLock()
+i_lock = RWLock()
+u_lock = RWLock()
+
 pprint = pprint.PrettyPrinter(indent=4).pprint
 
 
-class CRUD_neo4j:
-    def __init__(self, queue, verbose=True):
-        self.__queue = queue
-        self.__verbose = lambda x : print(x) if verbose else lambda x: None
+class CristinDB():
+    def __init__(self, queue, verbose=True, threads=5):
+        self.queue = queue
+        if verbose:
+            self.verbose = lambda x: print(x)
+            watch(self.__class__.__name__)
+        else:
+            self.verbose = lambda x: None
 
         with open('config.json') as c:
             conf = json.load(c)
+            watch("neo4j.http")
             self.__db = Graph(**conf['database'])
 
+        def select(label, prop):
+            select = NodeSelector(self.__db).select(label)
+            return set(map(lambda x: x[prop], select))
+
+        self.results = select("Result", "id")
+        self.persons = select("Person", "cristin_person_id")
+        self.instits = select("Institution", "cristin_institution_id")
+        self.units = select("Unit", "cristin_unit_id")
+
+        self.threads = {}
+
+        for pid in range(threads):
+            name = f"neo4j:{pid}"
+            t = Thread(target=self.run, name=name, args=(name,), daemon=True)
+            self.threads[name] = t.start()
+
+        self.batching()
+
+    def batching(self):
+        while True:
+            time.sleep(5)
+
     def result_create(self, result):
-        if self.result_exist(id=result.id):
-            self.__verbose(f"[EXIST][RESULT]:{result}")
+        # Check if Result exist
+        r_lock.acquire_read()
+        if result.id in self.results:
+            r_lock.release()
             return
+        r_lock.release()
 
+        # Add result to the set
+        r_lock.acquire_write()
+        if result.id in self.results:
+            r_lock.release()
+            return
+        self.results.add(result.id)
+        r_lock.release()
 
-        authors = result.get_collaborators()
-        authors_nodes = []
-        for a in authors:
-            if not self.person_exist(cristin_person_id=a.cristin_person_id):
-                self.person_create(rest.Person(a.cristin_person_id))
-            authors_nodes.append(self.person_read(cristin_person_id=a.cristin_person_id))
+        # Compile result node
+        result_node = compile_node("Result", result)
 
-        result_node = compile_node('Result', result)
-        tx = self.__db.begin()
-        tx.create(result_node)
-        tx.commit()
-
-        for a in authors_nodes:
+        # Add authors and returns them
+        for author in result.get_collaborators():
+            person_node = self.person_create(author.cristin_person_id)
             tx = self.__db.begin()
-            tx.create(Relationship(a, 'author', result_node))
+            tx.create(Relationship(person_node, "author", result_node))
             tx.commit()
 
-    def result_read(self, **kwarg):
-        selector = NodeSelector(self.__db)
-        selected = selector.select("Result", **kwarg).first()
-        return selected
+    def person_get(self, cristin_id):
+        select = NodeSelector(self.__db).select
+        return select("Person", cristin_person_id=cristin_id).first()
 
-    def result_update(self):
-        pass
-
-    def result_delete(self, **kwarg):
-        pass
-
-    def result_exist(self, **kwarg):
-        return True if self.result_read(**kwarg) else False
-
-
-    def person_create(self, person):
+    def person_create(self, cristin_id):
         # Check if person exist
-        if self.person_exist(cristin_person_id=person.cristin_person_id):
-            self.__verbose(f"[EXIST][PERSON]:{person}")
-            return
+        p_lock.acquire_read()
+        if cristin_id in self.persons:
+            p_lock.release()
+            return self.person_get(cristin_id)
+        p_lock.release()
 
-        # Create person node
+        # Fetch person
+        person = rest.Person(cristin_id)
         person_node = compile_node("Person", person)
 
-        # Iterate through affiliations
+        # Add person
+        p_lock.acquire_write()
+        if cristin_id in self.persons:
+            p_lock.release()
+            return self.person_get(cristin_id)
+
+        # Affiliation
         for affiliation in person.affiliations:
-            inst_id = affiliation['cristin_institution_id']
+            institution_id = affiliation["cristin_institution_id"]
             unit_id = affiliation['cristin_unit_id']
+            relation = "unkown"
+            if "position" in affiliation:
+                relation = affiliation["position"]
 
-            if not self.institution_exist(cristin_institution_id=inst_id):
-                self.institution_create(rest.Institution(inst_id))
+            institution_node = self.institution_create(institution_id)
+            unit_node = self.unit_get(unit_id)
 
-            def transaction(node):
-                tx = self.__db.begin()
-                relation = 'unkown'
-                try:
-                    relation = affiliation['position']
-                except KeyError:
-                    pass
-
-                tx.create(Relationship(person_node, relation, node))
-                tx.commit()
-
-            # Fetch institution record and unit record
+            # Save link
+            tx = self.__db.begin()
             try:
-                transaction(self.institution_read(cristin_institution_id=inst_id)[0])
-            except IndexError:
-                raise IndexError(f"cristin_institution_id: {inst_id} don't exist")
-            try:
-                transaction(self.unit_read(cristin_unit_id=unit_id)[0])
-            except IndexError:
-                try:
-                    transaction(self.institution_read(cristin_unit_id=unit_id)[0])
-                except IndexError:
-                    pass
+                tx.create(Relationship(person_node, relation, unit_node))
+            except AttributeError:
+                print(f"{unit_id}: not found")
+
+            tx.create(Relationship(person_node, relation, institution_node))
+            tx.commit()
 
         tx = self.__db.begin()
         tx.create(person_node)
         tx.commit()
-            # Create relationships
-        self.__verbose(f"[CREATE][PERSON]:{person}")
+        self.persons.add(cristin_id)
+        p_lock.release()
+        print(person)
 
-    def person_read(self, **kwarg):
-        selector = NodeSelector(self.__db)
-        selected = selector.select("Person", **kwarg)
-        return selected.first()
+        return person_node
 
-    def person_update(self):
-        pass
+    def institution_get(self, cristin_id):
+        select = NodeSelector(self.__db).select
+        return select("Institution", cristin_institution_id=cristin_id).first()
 
-    def person_delete(self, **kwarg):
-        pass
-
-    def person_exist(self, **kwarg):
-        return True if self.person_read(**kwarg) else False
-
-
-    def institution_create(self, institution):
+    def institution_create(self, cristin_id):
         # Check if institution exist
-        if self.institution_exist(cristin_institution_id=institution.cristin_institution_id):
-            self.__verbose(f"[EXIST][INSTITUTION]:{institution}")
-            return
+        i_lock.acquire_read()
+        if cristin_id in self.persons:
+            i_lock.release()
+            return self.institution_get(cristin_id)
+        i_lock.release()
 
-        # Creating a institution node
-        institution_node = compile_node("Institution", institution)
+        # Add institution
+        i_lock.acquire_write()
+        if cristin_id in self.instits:
+            i_lock.release()
+            return self.institution_get(cristin_id)
 
-        # Fetching a unit object with institution_id, because we need the institution subunits
-        tx = self.__db.begin()
-        tx.create(institution_node)
-        tx.commit()
-        self.__verbose(f"[CREATE][INSTITUTION]:{institution}")
+        # Fetch unit and institution
+        inst = rest.Institution(cristin_id)
+        unit = rest.Unit(inst.cristin_unit_id)
 
-        unit = rest.Unit(institution['cristin_unit_id'])
-
+        # institution node
+        inst_node = compile_node("Institution", inst)
         for subunit in unit.subunits:
-            s = rest.Unit(subunit['cristin_unit_id'])
-            if not self.unit_exist(cristin_unit_id=s.cristin_unit_id):
-                self.__verbose(f"[CREATE][UNIT]:{s}")
-                self.unit_create(institution_node, rest.Unit(s.cristin_unit_id))
+            unit_id = subunit["cristin_unit_id"]
+            self.unit_create(inst_node, unit_id)
 
-    def institution_read(self, **kwarg):
-        selector = NodeSelector(self.__db)
-        selected = selector.select("Institution", **kwarg)
-        return list(selected)
+        print(inst)
+        tx = self.__db.begin()
+        tx.create(inst_node)
+        tx.commit()
+        i_lock.release()
+        return inst_node
 
-    def institution_update(self):
-        pass
+    def unit_get(self, cristin_id):
+        select = NodeSelector(self.__db).select
+        return select("Unit", cristin_unit_id=cristin_id).first()
 
-    def institution_delete(self, **kwarg):
-        pass
+    def unit_create(self, parent_node, cristin_id):
+        u_lock.acquire_read()
+        if cristin_id in self.units:
+            u_lock.release()
+            return self.unit_get(cristin_id)
+        u_lock.release()
 
-    def institution_exist(self, **kwarg):
-        return True if len(self.institution_read(**kwarg)) else False
-
-
-    def unit_create(self, parent, unit):
-        # Check if institution exist
-        if self.unit_exist(cristin_unit_id=unit.cristin_unit_id):
-            self.__verbose(f"[EXIST][UNIT]:{unit}")
-            return
-
-        # Creating a institution node
+        # Fetch unit
+        unit = rest.Unit(cristin_id)
         unit_node = compile_node("Unit", unit)
 
-        # Create relationship from subunit -> parent
+        print(unit)
+
+        # Save node
         tx = self.__db.begin()
-        tx.create(Relationship(unit_node, 'BELONGS_TO', parent))
+        tx.create(Relationship(unit_node, "belong", parent_node))
         tx.commit()
+        self.units.add(cristin_id)
 
-        # Traversing through n subunits
         for subunit in unit.subunits:
-            s = rest.Unit(subunit['cristin_unit_id'])
-            if not self.unit_exist(cristin_unit_id=s.cristin_unit_id):
-                self.__verbose(f"[CREATE][UNIT]:{s}")
-                self.unit_create(unit_node, rest.Unit(s.cristin_unit_id))
-
-    def unit_read(self, **kwarg):
-        selector = NodeSelector(self.__db)
-        selected = selector.select("Unit", **kwarg)
-        return list(selected)
-
-    def unit_update(self):
-        pass
-
-    def unit_delete(self, **kwarg):
-        pass
-
-    def unit_exist(self, **kwarg):
-        return True if len(self.unit_read(**kwarg)) else False
-
+            subunit_id = subunit['cristin_unit_id']
+            self.unit_create(unit_node, subunit_id)
 
     def drop_db(self):
         self.__db.delete_all()
 
-    def run(self):
-        self.drop_db()
+    def run(self, name):
         while True:
-            pkg = self.__queue.get()
+            pkg = self.queue.get()
             if isinstance(pkg, list):
                 for result in pkg:
-                    self.result_create(result)
+                    if isinstance(result, ws.Result):
+                        self.result_create(result)
+                    else:
+                        self.verbose("{name} exiting")
+                        return
+            else:
+                self.__verbose("{name} exiting")
+                return
 
-def compile_node(label, properties):
-    prop = filter(lambda x: not isinstance(x[1], list) and not isinstance(x[1], dict), properties)
-    return Node(label, **{x[0]:x[1] for x in list(prop)})
+
+def compile_node(label, props):
+    p = filter(lambda x: not isinstance(x[1], list), props)
+    p = filter(lambda x: not isinstance(x[1], dict), list(p))
+    return Node(label, **{x[0]: x[1] for x in list(p)})
