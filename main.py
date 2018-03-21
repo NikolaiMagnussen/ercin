@@ -6,12 +6,12 @@ import time
 
 
 def start_db(queue):
-    CristinDB(queue, verbose=True, threads=10)
+    CristinDB(queue, verbose=False, threads=10)
 
 
 def start_sp(queue):
-    sp = Spider(queue, batch_size=10)
-    sp.crawl_sync(58877)
+    sp = Spider(queue, verbose=True, batch_size=10)
+    sp.crawl_async_slots(58877)
 
 
 if __name__ == '__main__':

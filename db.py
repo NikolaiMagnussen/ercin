@@ -119,7 +119,7 @@ class CristinDB():
             try:
                 tx.create(Relationship(person_node, relation, unit_node))
             except AttributeError:
-                print(f"{unit_id}: not found")
+                self.verbose(f"{unit_id}: not found")
 
             tx.create(Relationship(person_node, relation, institution_node))
             tx.commit()
@@ -155,7 +155,7 @@ class CristinDB():
             unit_id = subunit["cristin_unit_id"]
             self.unit_create(inst_node, unit_id)
 
-        print(inst)
+        self.verbose(inst)
         tx = self.__db.begin()
         tx.create(inst_node)
         tx.commit()
@@ -177,15 +177,15 @@ class CristinDB():
         unit = rest.Unit(cristin_id)
         unit_node = compile_node("Unit", unit)
 
-        print(unit)
+        self.verbose(unit)
 
         # Save node
         tx = self.__db.begin()
         try:
             tx.create(Relationship(unit_node, "belong", parent_node))
         except DatabaseError:
-            print(unit)
-            print(parent_node)
+            self.verbose(unit)
+            self.verbose(parent_node)
             raise DatabaseError
 
         tx.commit()

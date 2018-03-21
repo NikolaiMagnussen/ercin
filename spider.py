@@ -14,7 +14,7 @@ def query_collaborators():
 
 
 class Spider():
-    def __init__(self, queue, batch_size=10):
+    def __init__(self, queue, batch_size=10, verbose=False):
         self.__queue = queue
         self.results = set()
         self.authors = set()
@@ -22,14 +22,19 @@ class Spider():
         self.batch_size = batch_size
         self.request_slots = [None] * batch_size
         self.session = FuturesSession(max_workers=10)
+        if verbose:
+            self.verbose = lambda x: print(x)
+        else:
+            self.verbose = lambda x: None
 
     def print_stats(self, current_person):
-        return
-        print(f"Crawled through {current_person.cristin_person_id}:"
-              f"{current_person.firstname} {current_person.surname}")
-        print(f"\tNum of authors to crawl: {len(self.next_authors)}")
-        print(f"\tNum authors crawled: {len(self.authors)}")
-        print(f"\tNum results crawled: {len(self.results)}\n")
+        if self.verbose:
+            print(f"\nCrawled through {current_person.cristin_person_id}:"
+                  f"{current_person.firstname} {current_person.surname}")
+            print(f"\tNum of authors to crawl: {len(self.next_authors)}")
+            print(f"\tNum authors crawled: {len(self.authors)}")
+            print(f"\tNum results crawled: {len(self.results)}")
+            print(f"\tCurrent queue size: {self.__queue.qsize()}")
 
     def process_results(self, results):
         for res in results:
@@ -58,7 +63,7 @@ class Spider():
 
             # Print Information
             self.print_stats(current_person)
-        print(f"\nCrawl complete!")
+        self.verbose(f"\nCrawl complete!")
 
     def crawl_async_slots(self, start_person):
         # Can do this synchronously
@@ -84,20 +89,20 @@ class Spider():
                 elif self.request_slots[i].done():
                     # A request is completed
                     resp = self.request_slots[i].result().data
+                    self.__queue.put(resp)
                     self.process_results(resp)
                     self.request_slots[i] = None
 
             # Print Information
             if curr != last:
                 time_til_now = time.perf_counter()
-                print(f"After running for {time_til_now-very_start} seconds:")
-                print(f"\tAt least one result crawled in "
-                      f"\t{time_til_now-start_time:.2f}s")
-                print(f"\t{len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
-                      f"\t{len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
                 self.print_stats(curr)
+                self.verbose(f"\tAfter running for {time_til_now-very_start:.2f} seconds:")
+                self.verbose(f"\t\tAt least one result crawled in {time_til_now-start_time:.2f}s")
+                self.verbose(f"\t\t{len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
+                             f"\t\t{len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
             last = curr
-        print(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f}")
+        self.verbose(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f}")
 
     def crawl_async_batch(self, start_person):
         # Can do this synchronously
@@ -121,8 +126,8 @@ class Spider():
                 # Fire off the request
                 async_reqs.append(current_person.get_results(self.session))
 
-            print(f"Spinning of requests took "
-                  f"{time.perf_counter()-start_time:.2f}s")
+            self.verbose(f"Spinning of requests took "
+                         f"{time.perf_counter()-start_time:.2f}s")
             start_time = time.perf_counter()
 
             # Handle each request as soon as it finish
@@ -133,12 +138,12 @@ class Spider():
                         self.process_results(req.result().data)
                         async_reqs.remove(req)
                         req_num = self.batch_size-len(async_reqs)
-                        print(f"Request {req_num}/{self.batch_size} "
-                              f"took {time.perf_counter()-start_time:.2f}s")
+                        self.verbose(f"Request {req_num}/{self.batch_size} "
+                                     f"took {time.perf_counter()-start_time:.2f}s")
 
             # Print Information
             self.print_stats(current_person)
-        print(f"\nCrawl complete!")
+        self.verbose(f"\nCrawl complete!")
 
 if __name__ == "__main__":
     dag_id = 58877
