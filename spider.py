@@ -9,9 +9,9 @@ def query_collaborators():
     dag = rest.Person(dag_id)
     dag_results = dag.get_results()
     for res in dag_results:
-        print(f"\n{res}")
+        print(f"\n[INFO] {res}")
         for collab in res.get_collaborators():
-            print(f"\t{collab}")
+            print(f"[INFO]\t{collab}")
 
 
 class Spider():
@@ -30,12 +30,12 @@ class Spider():
             self.verbose = lambda x: None
 
     def print_stats(self, current_person):
-        self.verbose(f"\nCrawled through {current_person.cristin_person_id}:"
+        self.verbose(f"\n[VERBOSE] Crawled through {current_person.cristin_person_id}:"
               f"{current_person.firstname} {current_person.surname}")
-        self.verbose(f"\tNum of authors to crawl: {len(self.next_authors)}")
-        self.verbose(f"\tNum authors crawled: {len(self.authors)}")
-        self.verbose(f"\tNum results crawled: {len(self.results)}")
-        self.verbose(f"\tCurrent queue size: {self.__queue.qsize()}")
+        self.verbose(f"[VERBOSE]\t Num of authors to crawl: {len(self.next_authors)}")
+        self.verbose(f"[VERBOSE]\t Num authors crawled: {len(self.authors)}")
+        self.verbose(f"[VERBOSE]\t Num results crawled: {len(self.results)}")
+        self.verbose(f"[VERBOSE]\t Current queue size: {self.__queue.qsize()}")
 
     def process_results(self, results):
         for res in results:
@@ -64,7 +64,7 @@ class Spider():
 
             # Print Information
             self.print_stats(current_person)
-        self.verbose(f"\nCrawl complete!")
+        self.verbose(f"\n[VERBOSE] Crawl complete!")
 
     def crawl_async_slots(self):
         very_start = time.perf_counter()
@@ -91,17 +91,17 @@ class Spider():
             if curr != last:
                 time_til_now = time.perf_counter()
                 self.print_stats(curr)
-                self.verbose(f"\tAfter running for {time_til_now-very_start:.2f} seconds:")
-                self.verbose(f"\t\tAt least one result crawled in {time_til_now-start_time:.2f}s")
-                self.verbose(f"\t\t{len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
-                             f"\t\t{len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
+                self.verbose(f"[VERBOSE]\tAfter running for {time_til_now-very_start:.2f} seconds:")
+                self.verbose(f"[VERBOSE]\t\t At least one result crawled in {time_til_now-start_time:.2f}s")
+                self.verbose(f"[VERBOSE]\t\t {len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
+                             f"[VERBOSE]\t\t {len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
                 if time_til_now - very_start > 10:
                     self.__parent_queue.put(self.results)
                     self.__parent_queue.put(self.authors)
                     self.__parent_queue.put(self.next_authors)
                     break
             last = curr
-        print(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f} seconds and current queue size: {self.__queue.qsize()}")
+        print(f"\n[INFO] Crawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f} seconds and current queue size: {self.__queue.qsize()}")
         gc.collect()
         self.__parent_queue.close()
         self.__queue.close()
@@ -128,7 +128,7 @@ class Spider():
                 # Fire off the request
                 async_reqs.append(current_person.get_results(self.session))
 
-            self.verbose(f"Spinning of requests took "
+            self.verbose(f"[VERBOSE] Spinning of requests took "
                          f"{time.perf_counter()-start_time:.2f}s")
             start_time = time.perf_counter()
 
@@ -140,12 +140,12 @@ class Spider():
                         self.process_results(req.result().data)
                         async_reqs.remove(req)
                         req_num = self.batch_size-len(async_reqs)
-                        self.verbose(f"Request {req_num}/{self.batch_size} "
+                        self.verbose(f"[VERBOSE] Request {req_num}/{self.batch_size} "
                                      f"took {time.perf_counter()-start_time:.2f}s")
 
             # Print Information
             self.print_stats(current_person)
-        self.verbose(f"\nCrawl complete!")
+        self.verbose(f"\n[VERBOSE] Crawl complete!")
 
 if __name__ == "__main__":
     dag_id = 58877

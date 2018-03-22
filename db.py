@@ -21,7 +21,7 @@ class CristinDB():
     def __init__(self, queue, verbose=True, threads=5):
         self.queue = queue
         if verbose:
-            self.verbose = lambda x: print(x)
+            self.verbose = lambda x: print(f"[VERBOSE] {x}")
             watch(self.__class__.__name__)
         else:
             self.verbose = lambda x: None
@@ -127,7 +127,7 @@ class CristinDB():
             try:
                 tx.create(Relationship(person_node, relation, unit_node))
             except AttributeError:
-                print(f"{unit_id}: not found")
+                print(f"[WARNING] {unit_id}: not found")
 
             tx.create(Relationship(person_node, relation, institution_node))
             tx.commit()
@@ -198,10 +198,10 @@ class CristinDB():
         try:
             tx.create(Relationship(unit_node, "belong", parent_node))
         except DatabaseError:
-            print(unit)
-            print("DATABASE ERROR")
-            print(unit_node)
-            print(parent_node)
+            print("[ERROR] DATABASE ERROR")
+            print(f"[ERROR] {unit}")
+            print(f"[ERROR] {unit_node}")
+            print(f"[ERROR] {parent_node}")
             raise DatabaseError
 
         tx.commit()
@@ -216,20 +216,20 @@ class CristinDB():
 
     def run(self, name):
         while True:
-            print(f"Wants to get from queue: {self.queue.qsize()}")
+            print(f"[INFO] Wants to get from queue: {self.queue.qsize()}")
             try:
                 pkg = self.queue.get(timeout=10)
             except TimeoutError:
-                print(f"Unable to get data from the queue of current size: {self.queue.qsize()}")
+                print(f"[WARNING] Unable to get data from the queue of current size: {self.queue.qsize()}")
             if isinstance(pkg, list):
                 for result in pkg:
                     if isinstance(result, ws.Result):
                         self.result_create(result)
                     else:
-                        print("{name} exiting")
+                        print("[WARNING] {name} exiting")
                         return
             else:
-                print("{name} exiting")
+                print("[WARNING] {name} exiting")
                 return
 
 

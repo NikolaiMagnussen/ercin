@@ -15,7 +15,7 @@ def start_db(queue):
 def start_sp(queue, parent_queue):
     sp = Spider(queue, parent_queue, verbose=True, batch_size=10)
     sp.crawl_async_slots()
-    print("I am done crawling - handing over to someone else")
+    print("[INFO] I am done crawling - handing over to someone else")
     gc.collect()
 
 
@@ -48,7 +48,9 @@ if __name__ == '__main__':
 
         # Close previous queue and create new one
         parent_queue.close()
+        start_wait = time.perf_counter()
         sp.join()
+        print(f"[INFO] Waited {time.perf_counter()-start_wait:.2f} seconds for DB to digest")
         parent_queue = Queue()
 
         sp = Process(target=start_sp, args=(queue, parent_queue,), daemon=True, name=f"spider")
@@ -60,4 +62,4 @@ if __name__ == '__main__':
         parent_queue.put(authors)
         parent_queue.put(next_authors)
 
-    print("Exiting")
+    print("[INFO] Exiting")
