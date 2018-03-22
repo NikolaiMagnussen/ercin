@@ -104,6 +104,7 @@ class Spider():
             last = curr
         gc.collect()
         self.__parent_queue.close()
+        self.__queue.close()
         self.verbose(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f}")
 
     def crawl_async_batch(self, start_person):

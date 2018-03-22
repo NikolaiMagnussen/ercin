@@ -10,7 +10,6 @@ import gc
 def start_db(queue):
     CristinDB(queue, verbose=False, threads=10)
     gc.collect()
-    os._exit()
 
 
 def start_sp(queue, parent_queue):
@@ -18,7 +17,6 @@ def start_sp(queue, parent_queue):
     sp.crawl_async_slots()
     print("I am done crawling - handing over to someone else")
     gc.collect()
-    os._exit()
 
 
 if __name__ == '__main__':
@@ -51,6 +49,7 @@ if __name__ == '__main__':
         # Close previous queue and create new one
         parent_queue.close()
         sp.terminate()
+        sp.join()
         parent_queue = Queue()
 
         sp = Process(target=start_sp, args=(queue, parent_queue,), daemon=True, name=f"spider")
