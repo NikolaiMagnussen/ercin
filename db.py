@@ -127,9 +127,12 @@ class CristinDB():
             try:
                 tx.create(Relationship(person_node, relation, unit_node))
             except AttributeError:
-                print(f"[WARNING] {unit_id}: not found")
+                print(f"[WARNING] Unit {unit_id} not found")
 
-            tx.create(Relationship(person_node, relation, institution_node))
+            try:
+                tx.create(Relationship(person_node, relation, institution_node))
+            except AttributeError:
+                print(f"[WARNING] Institution {institution_id} not found")
             tx.commit()
         p_lock.release()
 
