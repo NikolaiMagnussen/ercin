@@ -8,7 +8,7 @@ import gc
 
 
 def start_db(queue):
-    CristinDB(queue, verbose=True, threads=10)
+    CristinDB(queue, verbose=False, threads=10)
     gc.collect()
 
 

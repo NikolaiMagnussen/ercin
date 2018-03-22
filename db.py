@@ -127,7 +127,7 @@ class CristinDB():
             try:
                 tx.create(Relationship(person_node, relation, unit_node))
             except AttributeError:
-                self.verbose(f"{unit_id}: not found")
+                print(f"{unit_id}: not found")
 
             tx.create(Relationship(person_node, relation, institution_node))
             tx.commit()
@@ -159,7 +159,7 @@ class CristinDB():
             return self.institution_get(cristin_id)
 
         # Save institution
-        #self.verbose(inst)
+        self.verbose(inst)
         tx = self.__db.begin()
         tx.create(inst_node)
         tx.commit()
@@ -198,10 +198,10 @@ class CristinDB():
         try:
             tx.create(Relationship(unit_node, "belong", parent_node))
         except DatabaseError:
-            self.verbose(unit)
-            self.verbose("DATABASE ERROR")
-            self.verbose(unit_node)
-            self.verbose(parent_node)
+            print(unit)
+            print("DATABASE ERROR")
+            print(unit_node)
+            print(parent_node)
             raise DatabaseError
 
         tx.commit()
@@ -216,7 +216,7 @@ class CristinDB():
 
     def run(self, name):
         while True:
-            self.verbose(f"Wants to get from queue: {self.queue.qsize()}")
+            print(f"Wants to get from queue: {self.queue.qsize()}")
             try:
                 pkg = self.queue.get(timeout=10)
             except TimeoutError:
@@ -226,10 +226,10 @@ class CristinDB():
                     if isinstance(result, ws.Result):
                         self.result_create(result)
                     else:
-                        self.verbose("{name} exiting")
+                        print("{name} exiting")
                         return
             else:
-                self.verbose("{name} exiting")
+                print("{name} exiting")
                 return
 
 
