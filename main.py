@@ -8,7 +8,7 @@ import gc
 
 
 def start_db(queue):
-    CristinDB(queue, verbose=False, threads=10)
+    CristinDB(queue, verbose=True, threads=10)
     gc.collect()
 
 
@@ -48,7 +48,6 @@ if __name__ == '__main__':
 
         # Close previous queue and create new one
         parent_queue.close()
-        sp.terminate()
         sp.join()
         parent_queue = Queue()
 

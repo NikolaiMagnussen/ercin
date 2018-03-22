@@ -95,16 +95,16 @@ class Spider():
                 self.verbose(f"\t\tAt least one result crawled in {time_til_now-start_time:.2f}s")
                 self.verbose(f"\t\t{len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
                              f"\t\t{len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
-                if time_til_now - very_start > 100:
+                if time_til_now - very_start > 10:
                     self.__parent_queue.put(self.results)
                     self.__parent_queue.put(self.authors)
                     self.__parent_queue.put(self.next_authors)
                     break
             last = curr
+        print(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f} seconds and current queue size: {self.__queue.qsize()}")
         gc.collect()
         self.__parent_queue.close()
         self.__queue.close()
-        self.verbose(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f}")
 
     def crawl_async_batch(self, start_person):
         # Can do this synchronously

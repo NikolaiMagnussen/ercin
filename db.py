@@ -113,9 +113,11 @@ class CristinDB():
         for affiliation in person.affiliations:
             institution_id = affiliation["cristin_institution_id"]
             unit_id = affiliation['cristin_unit_id']
-            relation = "unkown"
-            if "position" in affiliation:
+
+            if "position" in affiliation and affiliation["position"] is not None:
                 relation = affiliation["position"]
+            else:
+                relation = "unknown"
 
             institution_node = self.institution_create(institution_id)
             unit_node = self.unit_get(unit_id)
@@ -214,7 +216,11 @@ class CristinDB():
 
     def run(self, name):
         while True:
-            pkg = self.queue.get()
+            self.verbose(f"Wants to get from queue: {self.queue.qsize()}")
+            try:
+                pkg = self.queue.get(timeout=10)
+            except TimeoutError:
+                print(f"Unable to get data from the queue of current size: {self.queue.qsize()}")
             if isinstance(pkg, list):
                 for result in pkg:
                     if isinstance(result, ws.Result):
