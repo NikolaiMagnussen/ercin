@@ -30,13 +30,12 @@ class Spider():
             self.verbose = lambda x: None
 
     def print_stats(self, current_person):
-        if self.verbose:
-            print(f"\nCrawled through {current_person.cristin_person_id}:"
-                  f"{current_person.firstname} {current_person.surname}")
-            print(f"\tNum of authors to crawl: {len(self.next_authors)}")
-            print(f"\tNum authors crawled: {len(self.authors)}")
-            print(f"\tNum results crawled: {len(self.results)}")
-            print(f"\tCurrent queue size: {self.__queue.qsize()}")
+        self.verbose(f"\nCrawled through {current_person.cristin_person_id}:"
+              f"{current_person.firstname} {current_person.surname}")
+        self.verbose(f"\tNum of authors to crawl: {len(self.next_authors)}")
+        self.verbose(f"\tNum authors crawled: {len(self.authors)}")
+        self.verbose(f"\tNum results crawled: {len(self.results)}")
+        self.verbose(f"\tCurrent queue size: {self.__queue.qsize()}")
 
     def process_results(self, results):
         for res in results:
