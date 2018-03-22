@@ -1,6 +1,7 @@
 from cristin import rest
 from requests_futures.sessions import FuturesSession
 import time
+import gc
 
 
 def query_collaborators():
@@ -14,14 +15,15 @@ def query_collaborators():
 
 
 class Spider():
-    def __init__(self, queue, batch_size=10, verbose=False):
+    def __init__(self, queue, parent_queue, batch_size=10, verbose=False):
         self.__queue = queue
-        self.results = set()
-        self.authors = set()
-        self.next_authors = set()
+        self.__parent_queue = parent_queue
         self.batch_size = batch_size
         self.request_slots = [None] * batch_size
         self.session = FuturesSession(max_workers=10)
+        self.results = parent_queue.get()
+        self.authors = parent_queue.get()
+        self.next_authors = parent_queue.get()
         if verbose:
             self.verbose = lambda x: print(x)
         else:
@@ -65,27 +67,20 @@ class Spider():
             self.print_stats(current_person)
         self.verbose(f"\nCrawl complete!")
 
-    def crawl_async_slots(self, start_person):
-        # Can do this synchronously
-        current_person = rest.Person(start_person)
-        self.authors.add(current_person.cristin_person_id)
-        self.process_results(current_person.get_results())
-
-        # Print Information
-        self.print_stats(current_person)
-
+    def crawl_async_slots(self):
         very_start = time.perf_counter()
 
         # This must be done async!
         last = None
-        while len(self.next_authors) > 0:
+        while True:
             start_time = time.perf_counter()
             for i in range(self.batch_size):
                 if self.request_slots[i] is None:
                     # New request
-                    curr = rest.Person(self.next_authors.pop())
-                    self.authors.add(curr.cristin_person_id)
-                    self.request_slots[i] = curr.get_results(self.session)
+                    if len(self.next_authors) > 0:
+                        curr = rest.Person(self.next_authors.pop())
+                        self.authors.add(curr.cristin_person_id)
+                        self.request_slots[i] = curr.get_results(self.session)
                 elif self.request_slots[i].done():
                     # A request is completed
                     resp = self.request_slots[i].result().data
@@ -101,7 +96,14 @@ class Spider():
                 self.verbose(f"\t\tAt least one result crawled in {time_til_now-start_time:.2f}s")
                 self.verbose(f"\t\t{len(self.authors)/(time_til_now-very_start):.2f} authors crawled per second\n"
                              f"\t\t{len(self.results)/(time_til_now-very_start):.2f} results crawled per second")
+                if time_til_now - very_start > 100:
+                    self.__parent_queue.put(self.results)
+                    self.__parent_queue.put(self.authors)
+                    self.__parent_queue.put(self.next_authors)
+                    break
             last = curr
+        gc.collect()
+        self.__parent_queue.close()
         self.verbose(f"\nCrawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f}")
 
     def crawl_async_batch(self, start_person):
