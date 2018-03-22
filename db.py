@@ -68,6 +68,10 @@ class CristinDB():
 
         # Compile result node
         result_node = compile_node("Result", result)
+        tx = self.__db.begin()
+        tx.create(result_node)
+        tx.commit()
+        self.verbose(result)
 
         # Add authors and returns them
         for author in result.get_collaborators():
@@ -75,6 +79,7 @@ class CristinDB():
             tx = self.__db.begin()
             tx.create(Relationship(person_node, "author", result_node))
             tx.commit()
+
 
     def person_get(self, cristin_id):
         select = NodeSelector(self.__db).select
@@ -98,6 +103,7 @@ class CristinDB():
             p_lock.release()
             return self.person_get(cristin_id)
 
+        self.verbose(person)
         tx = self.__db.begin()
         tx.create(person_node)
         tx.commit()
@@ -139,31 +145,37 @@ class CristinDB():
             return self.institution_get(cristin_id)
         i_lock.release()
 
+        # Fetch unit and institution
+        inst = rest.Institution(cristin_id)
+        unit = rest.Unit(inst.cristin_unit_id)
+        inst_node = compile_node("Institution", inst)
+
         # Add institution
         i_lock.acquire_write()
         if cristin_id in self.instits:
             i_lock.release()
             return self.institution_get(cristin_id)
 
-        # Fetch unit and institution
-        inst = rest.Institution(cristin_id)
-        unit = rest.Unit(inst.cristin_unit_id)
+        # Save institution
+        #self.verbose(inst)
+        tx = self.__db.begin()
+        tx.create(inst_node)
+        tx.commit()
+        self.instits.add(cristin_id)
 
         # institution node
-        inst_node = compile_node("Institution", inst)
         for subunit in unit.subunits:
             unit_id = subunit["cristin_unit_id"]
             self.unit_create(inst_node, unit_id)
 
-        self.verbose(inst)
-        tx = self.__db.begin()
-        tx.create(inst_node)
-        tx.commit()
         i_lock.release()
         return inst_node
 
     def unit_get(self, cristin_id):
+        u_lock.acquire_read()
         select = NodeSelector(self.__db).select
+        unit = select("Unit", cristin_unit_id=cristin_id).first()
+        u_lock.release()
         return select("Unit", cristin_unit_id=cristin_id).first()
 
     def unit_create(self, parent_node, cristin_id):
@@ -185,6 +197,8 @@ class CristinDB():
             tx.create(Relationship(unit_node, "belong", parent_node))
         except DatabaseError:
             self.verbose(unit)
+            self.verbose("DATABASE ERROR")
+            self.verbose(unit_node)
             self.verbose(parent_node)
             raise DatabaseError
 
@@ -209,7 +223,7 @@ class CristinDB():
                         self.verbose("{name} exiting")
                         return
             else:
-                self.__verbose("{name} exiting")
+                self.verbose("{name} exiting")
                 return
 
 
