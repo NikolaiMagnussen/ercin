@@ -7,7 +7,6 @@ from prwlock import RWLock
 
 import sys
 import json
-import time
 import pprint
 
 r_lock = RWLock()
@@ -90,7 +89,6 @@ class CristinDB():
             tx = self.__db.begin()
             tx.create(Relationship(person_node, "author", result_node))
             tx.commit()
-
 
     def person_get(self, cristin_id):
         select = NodeSelector(self.__db).select
@@ -192,7 +190,7 @@ class CristinDB():
         select = NodeSelector(self.__db).select
         unit = select("Unit", cristin_unit_id=cristin_id).first()
         u_lock.release()
-        return select("Unit", cristin_unit_id=cristin_id).first()
+        return unit
 
     def unit_create(self, parent_node, cristin_id):
         u_lock.acquire_read()

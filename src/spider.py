@@ -150,6 +150,7 @@ class Spider():
             self.print_stats(current_person)
         self.verbose(f"\n[VERBOSE] Crawl complete!")
 
+
 if __name__ == "__main__":
     dag_id = 58877
     # query_collaborators()

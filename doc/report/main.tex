@@ -1,0 +1,74 @@
+
+% REQUIREMENTS
+% 2-8 pages!
+
+% Deadline: Paper submission march 27th
+
+
+% The paper must include references to relevant literature
+% The paper must focus on a clearly described challenge goal
+% Declare what part of the work is done solely for the purpose of this course.
+
+
+% INCLUDING
+% Motivation and goal
+% Compare systems? (Difference between rdbms and graph database)
+% Typical design and implementation - focus on graph database? Less on crawler and extraction of data.
+% Performance evaluation?
+% ...
+
+\documentclass[conference]{IEEEtran}
+
+% Package list
+\usepackage{graphicx}
+\usepackage[backend=biber,
+  bibstyle=ieee,
+  citestyle=numeric-comp,
+  sortcites=true]{biblatex}
+\addbibresource{references.bib}
+
+\begin{document}
+
+% Title
+\title{Title}
+
+% Authors
+\author{\IEEEauthorblockN{Andreas Isnes Nilsen}
+\IEEEauthorblockA{
+Department of Computer Science\\
+University of Troms{\o}\\
+Email: andreas.i.nilsen@uit.no}
+\and
+\IEEEauthorblockN{Nikolai Magnussen}
+\IEEEauthorblockA{
+Department of Computer Science\\
+University of Troms{\o}\\
+Email: nikolai.a.magnussen}}
+\maketitle
+
+\begin{abstract}
+\input{sections/abstract.tex}
+\end{abstract}
+
+% Introduction + motivation, goal, purpose
+\section{Introduction}
+\input{sections/introduction.tex}
+
+% Design
+\section{Design}
+\input{sections/design.tex}
+
+% Implementation
+\section{Implementation}
+
+% Evaluation
+\section{Evaluation}
+\input{sections/evaluation.tex}
+
+% Conclusion
+\section{Conclusion}
+\input{sections/conclusion.tex}
+
+\printbibliography
+
+\end{document}
