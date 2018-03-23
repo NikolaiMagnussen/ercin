@@ -9,6 +9,7 @@ import gc
 
 def start_db(queue):
     CristinDB(queue, verbose=False, threads=10)
+    print("[INFO] CristinDB is done running - exiting")
     gc.collect()
 
 
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     while(len(procs)):
         time.sleep(60)
         procs = list(filter(lambda x: x.is_alive(), procs))
+        print(f"[INFO] Remaining processes: {procs}")
 
         # Get sets from child
         results = parent_queue.get()

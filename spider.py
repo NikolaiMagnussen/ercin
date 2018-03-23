@@ -1,6 +1,7 @@
 from cristin import rest
 from requests_futures.sessions import FuturesSession
 import time
+import sys
 import gc
 
 
@@ -36,6 +37,7 @@ class Spider():
         self.verbose(f"[VERBOSE]\t Num authors crawled: {len(self.authors)}")
         self.verbose(f"[VERBOSE]\t Num results crawled: {len(self.results)}")
         self.verbose(f"[VERBOSE]\t Current queue size: {self.__queue.qsize()}")
+        sys.stdout.flush()
 
     def process_results(self, results):
         for res in results:
@@ -101,7 +103,8 @@ class Spider():
                     self.__parent_queue.put(self.next_authors)
                     break
             last = curr
-        print(f"\n[INFO] Crawl complete with {len(self.next_authors)} in {time.perf_counter()-very_start:.2f} seconds and current queue size: {self.__queue.qsize()}")
+        print(f"\n[INFO] Crawl complete with {len(self.next_authors)} queued authors in {time.perf_counter()-very_start:.2f} seconds and current queue size: {self.__queue.qsize()}")
+        sys.stdout.flush()
         gc.collect()
         self.__parent_queue.close()
         self.__queue.close()

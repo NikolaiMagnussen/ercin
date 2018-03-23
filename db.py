@@ -5,6 +5,7 @@ from cristin import rest, ws
 from threading import Thread
 from prwlock import RWLock
 
+import sys
 import json
 import time
 import pprint
@@ -58,6 +59,7 @@ class CristinDB():
             thread.join()
 
         print("f[INFO] {self.__class__.__name__} is finished running")
+        sys.stdout.flush()
 
     def result_create(self, result):
         # Check if Result exist
