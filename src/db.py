@@ -35,7 +35,7 @@ class CristinDB():
             select = NodeSelector(self.__db).select(label)
             return set(map(lambda x: x[prop], select))
 
-        self.drop_db()
+        #self.drop_db()
         self.results = select("Result", "id")
         self.persons = select("Person", "cristin_person_id")
         self.instits = select("Institution", "cristin_institution_id")
@@ -230,9 +230,10 @@ class CristinDB():
         while True:
             print(f"[INFO] Wants to get from queue: {self.queue.qsize()}")
             try:
-                pkg = self.queue.get(timeout=10)
-            except TimeoutError:
+                pkg = self.queue.get(timeout=100)
+            except Exception as e:
                 print(f"[WARNING] Unable to get data from the queue of current size: {self.queue.qsize()}")
+                print(f"[WARNING] Queue.get timed out: {e}")
             if isinstance(pkg, list):
                 for result in pkg:
                     if isinstance(result, ws.Result):
