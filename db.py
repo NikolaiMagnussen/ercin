@@ -43,12 +43,21 @@ class CristinDB():
 
         self.threads = {}
 
+        # Start thread
         for pid in range(threads):
             name = f"neo4j:{pid}"
             t = Thread(target=self.run, name=name, args=(name,), daemon=True)
-            self.threads[name] = t.start()
+            self.threads[name] = t
+            t.start()
 
+        # Run self
         self.run(self.__class__.__name__)
+
+        # Make sure main thread don't exit before children
+        for thread in self.threads.values():
+            thread.join()
+
+        print("f[INFO] {self.__class__.__name__} is finished running")
 
     def result_create(self, result):
         # Check if Result exist
