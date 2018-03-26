@@ -8,6 +8,11 @@ This section describes shortly how the Cristin API was implemented. It then desc
 
 % Eznis
 \subsection*{Processing extracted data}
+Data extracted from Cristin is structured in json format which makes it easy to work with. Json objects are a key-value store which makes it similar to nodes in a graph database. Nodes are the entities in a graph database. They can hold any number of attributes (key-value-pairs) called properties. Nodes can be tagged with labels representing their different roles in your domain.\cite{neo4j} The difference between a json object and a node is that a json value can take form of a \textit{dictionary} and a property value can't. To make a json object compatible as a node be sure that every value isn't a dictionary and attach a label to it.
+
+
+
+
 
 % Eznis
 \subsection*{Inserting data}
