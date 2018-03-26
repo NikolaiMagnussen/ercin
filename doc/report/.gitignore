@@ -8,4 +8,5 @@
 *.run.xml
 *.synctex.gz
 *.out
-main.pdf
+*.pdf
+!figures/*
