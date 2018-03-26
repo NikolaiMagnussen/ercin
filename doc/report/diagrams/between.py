@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 
 UIO  = [91884, 49652, 29108, 20010, 13704]
@@ -19,8 +20,7 @@ for t, inst in enumerate(data):
 data.append(others)
 data.append(total)
 
-for t in data:
-    print(t)
+matplotlib.rc('font', size=22)
 
 columns = ['UIO', 'NTNU', 'UIB','UIT', 'NMBU']
 rows = ['UIO', 'NTNU', 'UIB', 'UIT', 'NMBU', 'others', 'total']
