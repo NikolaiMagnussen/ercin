@@ -19,7 +19,7 @@ The number of authors to crawl will grow exponentially until all authors are fin
 Data extracted from Cristin is structured in json format which makes it easy to work with. Json objects are a key-value store which makes it similar to nodes in a graph database. Nodes are the entities in a graph database. They can hold any number of attributes (key-value-pairs) called properties. Nodes can be tagged with labels representing their different roles in your domain.\cite{neo4j} The difference between a json object and a node is that a json value can take form of a \textit{dictionary} and a property value can't. A json object is compatible as a node if none of the values are a dictionary and a label is attached to it.
 
 \subsection*{Inserting data}
-Inserting nodes into a graph database is straight forward, but creating relations between nodes can be a hassle. The challange is to know wether two nodes exists in the database before creating a relationship between them. \Fref{fig:subgraph} shows that the relationship \textit{guest} can't be created unless the green \textit{unit} node, red \textit{institution} node and the blue \textit{person} exists in the database.
+Inserting nodes into a graph database is straight forward, but creating relations between nodes can be a hassle. The challange is to know wether two nodes exists in the database before creating a relationship between them. \Fref{fig:subgraph} shows that the relationship \textit{guest} can't be created unless the green \textit{unit} node, red \textit{institution} node and the blue \textit{person} node exists in the database. 
 
 \begin{figure}[h]
   \centering
