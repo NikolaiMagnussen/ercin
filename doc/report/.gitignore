@@ -7,5 +7,5 @@
 *.log
 *.run.xml
 *.synctex.gz
-*.pdf
 *.out
+main.pdf
