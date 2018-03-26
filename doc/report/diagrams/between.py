@@ -51,6 +51,5 @@ plt.ylabel("Publications")
 plt.xticks([])
 plt.grid(True, axis='y', linestyle="--", alpha=0.3)
 plt.yticks([0, 50000, 100000, 150000, 200000, 250000, 300000])
-plt.title("Publications between institutions")
 
 plt.show()
