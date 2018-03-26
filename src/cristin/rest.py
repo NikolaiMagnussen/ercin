@@ -23,7 +23,7 @@ class APIResource():
         if name not in schemas:
             res = requests.get(f"{self.schema}?lang={lang}")
             if res.status_code != 200:
-                raise LookupError("[{res.status_code}:{res.reason}]")
+                raise LookupError("[{res.status_code}:{res.reason}] for lang: {lang} and schema: {self.schema}")
 
             schemas[name] = res.json()
 
@@ -32,7 +32,7 @@ class APIResource():
             if res.status_code == 200:
                 self.__attributes = res.json()
             else:
-                raise LookupError(f"[{res.status_code}:{res.reason}]")
+                raise LookupError(f"[{res.status_code}:{res.reason}] for lang: {lang} and data: {data}")
 
         elif isinstance(data, dict):
             self.__attributes = data

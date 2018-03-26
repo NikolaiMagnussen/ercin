@@ -39,7 +39,7 @@ if __name__ == '__main__':
         p.start()
 
     while(len(procs)):
-        time.sleep(60)
+        time.sleep(10)
         procs = list(filter(lambda x: x.is_alive(), procs))
         print(f"[INFO] Remaining processes: {procs}")
 
