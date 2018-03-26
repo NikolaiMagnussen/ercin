@@ -10,19 +10,20 @@ The Web Service API\cite{CRISTIN-WS} is still available for legacy purposes, and
 
 All data discussed later in the paper is extracted through these API's.
 
-% Skakke ha kake a kai
 \subsection*{Crawling Cristin}
 Authors are stored with ID's starting from 0, but with a large number of vacant person ID's, and the importance of relationship, makes rearching persons with monotonically increasing person ID infeasible.
 Due to this limitation, a crawler is implemented. It will start at a person, retrieve the scientific results of that person, mark that person as crawled, store the results, and crawl each of the collaborating authors for all results retrieved that have not already been crawled, as to eliminate crawling cycles.
 The number of authors to crawl will grow exponentially until all authors are finally crawled.
 
-% Eznis
 \subsection*{Processing extracted data}
-Data extracted from Cristin is structured in json format which makes it easy to work with. Json objects are a key-value store which makes it similar to nodes in a graph database. Nodes are the entities in a graph database. They can hold any number of attributes (key-value-pairs) called properties. Nodes can be tagged with labels representing their different roles in your domain.\cite{neo4j} The difference between a json object and a node is that a json value can take form of a \textit{dictionary} and a property value can't. To make a json object compatible as a node be sure that every value isn't a dictionary and attach a label to it.
+Data extracted from Cristin is structured in json format which makes it easy to work with. Json objects are a key-value store which makes it similar to nodes in a graph database. Nodes are the entities in a graph database. They can hold any number of attributes (key-value-pairs) called properties. Nodes can be tagged with labels representing their different roles in your domain.\cite{neo4j} The difference between a json object and a node is that a json value can take form of a \textit{dictionary} and a property value can't. A json object is compatible as a node if none of the values are a dictionary and a label is attached to it.
 
-
-
-
-
-% Eznis
 \subsection*{Inserting data}
+Inserting nodes into a graph database is straight forward, but creating relations between nodes can be a hassle. The challange is to know wether two nodes exists in the database before creating a relationship between them. \Fref{fig:subgraph} shows that the relationship \textit{guest} can't be created unless the green \textit{unit} node, red \textit{institution} node and the blue \textit{person} exists in the database.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.35\textwidth]{graph.pdf}
+  \caption{A subgraph}
+  \label{fig:subgraph}
+\end{figure}
