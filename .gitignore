@@ -1,4 +1,5 @@
 cristin.egg-info/*
+deliverables
 __pycache__
 *.swp
 *.pyc
