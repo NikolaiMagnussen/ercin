@@ -1,4 +1,4 @@
-This section describes shortly how the Cristin API was implemented. It then describes the process of crawling Cristins RDBMS. Finally, it describes how the extracted data was processed to create relations and nodes in a graph database.
+This section describes shortly how our wrapper library for the Cristin API was implemented. It then describes the process of crawling Cristin's RDBMS via its APIs. Finally, it describes how the extracted data was processed to create relations and nodes in a graph database.
 
 % Skakke ha kake a kai
 % Skrive en liten del om hvordan en henter ut data fra CRISTIN sitt API.
@@ -10,10 +10,10 @@ Cristin provides APIs to extract information by querying a REST or Web Service A
 
 The Web Service API\cite{CRISTIN-WS} is still available for legacy purposes, it allows to request for scientific results by a particular person. This functionality is not available in the more modern REST API. The REST API\cite{CRISTIN-REST} allow queries with less processing on the server's side than the Web Service API, but without the ability to query scientific results, such as papers in journals and presentations at conferences.
 
-All data discussed later in the paper is extracted through these API's.
+All data discussed later in the paper is extracted through these APIs.
 
 \subsection*{Crawling Cristin}
-Authors are stored with ID's starting from 0, but with a large number of vacant person ID's, and the importance of relationship, makes researching persons with monotonically increasing person ID infeasible.
+Authors are stored with IDs starting from 0, but with a large number of vacant person IDs, and the importance of relationship, makes researching persons with monotonically increasing person ID infeasible.
 Due to this limitation, a crawler is implemented. It will start at a person, retrieve the scientific results of that person, mark that person as crawled, store the results, and crawl each of the collaborating authors for all results retrieved that have not already been crawled, as to eliminate crawling cycles.
 The number of authors to crawl will grow exponentially until all authors are finally crawled.
 
