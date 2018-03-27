@@ -6,6 +6,6 @@
         "https_port": 7473,
         "bolt_port": 7687,
         "user": "neo4j",
-        "password":"kakedeig"
+        "password":"neo4j"
     }
 }
