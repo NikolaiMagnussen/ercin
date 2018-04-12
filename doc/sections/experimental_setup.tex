@@ -3,8 +3,10 @@ Neo4j 3.3 is the graph database used for storing and querying the data.
 
 
 There are a number of ways to evaluate research connectivity, but for this paper, the following data is examined.
-The total number of publications authored at the five top publishing institutions in Norway, and whether they are subject to cooperation between researchers from different institutions, such as UiO and NTNU.
+The total number of publications authored at the five top publishing institutions in Norway which are UiT (University in Tromsø), UiO (University in Oslo), NTNU (Norwegian University of Science and Technology), UiB (University in Bergen) and NMBU (Norwegian University of Life Sciences). If the institutions are subject to cooperation between researchers from different institutions, such as UiO and NTNU.
 This will be a measure of the connectivity between institutions in Norway, and it remains to measure the connectivity within institutions.
 Connectivity within institutions can be measured in much the same way, but rather than determining if results have been subject to cooperation between researchers from different institutions, we want to determine if they are produced by persons within the same institutions but from different units of that institution, such as a different faculty, or a different department.
 
-The sample size is 1.17 million nodes, comprising researchers, results, institutions and units. This is not all data available, but we believe the sample size makes this data representative of the population as a whole.
+The sample size is 1.17 million nodes, comprising researchers, results, institutions, and units. This is not all data available, we weren't able to extract all the researchers, institutions and results because of limited time and a strain implementation of a python script that inserted nodes in the neo4j database, but regularly failed due to inconsistent data from Cristin. But we believe the sample size makes this data representative of the population as a whole.
+
+The Neo4j Platform was used due to the highly relational data that was collected, it allowed us to do advanced cypher queries that took only a few minutes. If an RDBMS were chosen the number of joins would be too much, tables would be overwhelmingly big and queries would take a lot of time! Neo4j also comes with a fine-grained interface with neat features and visualization of graphs.

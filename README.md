@@ -1,5 +1,14 @@
 # ERCIN: Exploring Research Connectivity In Norway
 
+## How to run
+Applications needed to run this program
+- python3
+- neo4j
+
+Community Modules required (pip for python3)
+- py2neo
+- requests-futures
+
 ## Ideas:
 - Crawl CRISTIN for authors and scientific publications
 - Insert authors and publications into a Neo4j database
